@@ -16,7 +16,7 @@ To use it, copy the [`./src/markdown.html`](src/markdown.html) file into a folde
 * Social media metadata (`og:\*`, `twitter:\*`)
 * Text file metadata (bitrate, resolution, etc)
 * Keyboard shortcuts (press `?` to see the list)
-* Support for viewing text files directly from **OneDrive** and **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `markdown.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work.
+* Support for viewing text files directly from **OneDrive** and **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `markdown.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work. [Remix this Glitch](https://markdown-html-remix.glitch.me/src/markdown.html#eyJsb2NhdGlvbiI6Imh0dHBzOi8vbWFya2Rvd24taHRtbC1yZW1peC5nbGl0Y2gubWUvIiwiZG9jdW1lbnQiOiIifQ%3D%3D) to easily check it out over HTTPS with your own API keys.
 
 ## Supported Browsers
 
