@@ -1,0 +1,2082 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <title>markdown.html</title>
+  <meta charset='utf-8'>
+  <meta name='description' content='Drop markdown.html in a folder of text files and view them nicely on the web' />
+  <meta name='version' content='1.0'>
+  <meta name='Copyright' content=' ©2020 Paul Ellis'>
+  <meta name='license' content='https://opensource.org/licenses/MIT'>
+  <meta name='apple-mobile-web-app-status-bar-style' content='black'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <!-- https://raw.githubusercontent.com/dcurtis/markdown-mark/master/svg/markdown-mark-solid.svg
+  https://raw.githubusercontent.com/dcurtis/markdown-mark/master/svg/markdown-mark.svg -->
+  <link rel='shortcut icon'
+    href='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDggMTI4Ij48cGF0aCBkPSJNMTkzIDEyOEgxNWExNSAxNSAwIDAgMS0xNS0xNVYxNUExNSAxNSAwIDAgMSAxNSAwaDE3OGExNSAxNSAwIDAgMSAxNSAxNXY5OGExNSAxNSAwIDAgMS0xNSAxNXpNNTAgOThWNTlsMjAgMjUgMjAtMjV2MzloMjBWMzBIOTBMNzAgNTUgNTAgMzBIMzB2Njh6bTEzNC0zNGgtMjBWMzBoLTIwdjM0aC0yMGwzMCAzNXoiIGZpbGw9IiM0OTlCRUEiLz48L3N2Zz4=' />
+  <style>
+    *,
+    *::before,
+    *::after {
+      -moz-box-sizing: border-box;
+      -webkit-box-sizing: border-box;
+      box-sizing: border-box;
+
+      user-select: none;
+
+      line-height: 1em;
+
+      --tile-aspect-ratio: calc(4/16);
+      --tile-width: 22rem;
+      --tile-height: calc(var(--tile-width) * var(--tile-aspect-ratio));
+      --tile-border-radius: 0.25rem;
+      --inter-tile-margin: 0.5rem;
+
+      --theme-color: rgb(73, 155, 234);
+      --folder-color: rgb(3, 167, 221);
+      --modal-background-color: rgba(32,32,32,0.5);
+
+      --transition-base: 300ms;
+    }
+
+    html {
+      font-family: 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      background-color: #111;
+      color: #FFF;
+    }
+
+    body {
+      padding: 0;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    svg {
+      transform: scale(1.25);
+    }
+
+    .viewerContainer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      overflow: hidden;
+      height: 100vh;
+      width: calc(100vw - var(--tile-width));
+    }
+
+    .viewerContainer:-webkit-full-screen,
+    .viewerContainer:fullscreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .viewerContainer:-webkit-full-screen .controls,
+    .viewerContainer:fullscreen          .controls {
+      position: absolute;
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    .viewerContainer.drop::before {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      content: "Drop Here";
+      font-size: 5rem;
+      text-shadow: 0px 0px 1.5rem #000;
+      background-color: rgba(64,64,64,0.5);
+      background-image: url('data:image/svg+xml;utf8,<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path fill="hsl(323, 100%, 50%)" d="M12,2 C17.5228,2 22,6.47715 22,12 C22,17.5228 17.5228,22 12,22 C6.47715,22 2,17.5228 2,12 C2,6.47715 6.47715,2 12,2 Z M12,4 C7.58172,4 4,7.58172 4,12 C4,16.4183 7.58172,20 12,20 C16.4183,20 20,16.4183 20,12 C20,7.58172 16.4183,4 12,4 Z M12,6 C15.3137,6 18,8.68629 18,12 C18,15.3137 15.3137,18 12,18 C8.68629,18 6,15.3137 6,12 C6,8.68629 8.68629,6 12,6 Z M12,8 C9.79086,8 8,9.79086 8,12 C8,14.2091 9.79086,16 12,16 C14.2091,16 16,14.2091 16,12 C16,9.79086 14.2091,8 12,8 Z M12,10 C13.1046,10 14,10.8954 14,12 C14,13.1046 13.1046,14 12,14 C10.8954,14 10,13.1046 10,12 C10,10.8954 10.8954,10 12,10 Z"></path></svg>');
+      background-size: 25%;
+      background-position: center;
+      background-repeat: no-repeat;
+      animation: pulse calc(2 * var(--transition-base)) ease-in-out alternate infinite;
+      z-index: 2000;
+    }
+
+    @keyframes pulse {
+      0%   { opacity: 100%; }
+      100% { opacity: 50% }
+    }
+
+    .controls {
+      opacity: 100%;
+      transition: opacity var(--transition-base);
+    }
+    :-webkit-full-screen.fadeout .controls,
+    :fullscreen.fadeout          .controls {
+      opacity: 0;
+    }
+
+    :-webkit-full-screen.fadeout,
+    :fullscreen.fadeout {
+      cursor: none;
+    }
+
+    :-webkit-full-screen .player,
+    :fullscreen          .player {
+      margin: 0;
+      min-height: 100vh;
+      max-height: 100vh;
+    }
+
+    .view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border: 0 none;
+      width: 100%;
+      height: 100%;
+
+      background-color: white;
+      color: black;
+
+      padding: 1em;
+    }
+
+    .modal {
+      z-index: 100;
+      display: flex;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      min-width: 320px;
+      max-width: 100vw;
+      overflow-x: hidden;
+
+      margin: 0;
+      margin-left: -100vw;
+      transition: margin-left var(--transition-base) ease;
+      padding: 1rem;
+
+      align-items: center;
+      justify-content: flex-start;
+      flex-direction: column;
+      gap: 0.1rem;
+
+      list-style: none;
+
+      background-color: var(--modal-background-color);
+    }
+
+    .show {
+      margin-left: 0;
+    }
+
+    .modal::before {
+      display: block;
+      font-size: 1.1em;
+      margin: 0.5rem;
+    }
+    .fileinfo::before {
+      content: "File metadata";
+    }
+    .help::before {
+      content: "Keyboard Shortcuts"
+    }
+
+    .modal-item {
+      display: block;
+      padding: 1rem;
+      width: 100%;
+      position: relative;
+      margin: 0;
+      background-color: rgba(0,0,0,0.25);
+
+    }
+    .help-item {
+      max-width: 320px;
+    }
+
+    .fileinfo-item .key, .help-item .key {
+      display: inline-block;
+      width: 10rem;
+      margin-right: 1rem;
+      font-weight: bold;
+    }
+
+    .fileinfo-item .value {
+      display: inline-block;
+      width: calc(100% - 11rem);
+      user-select: text;
+    }
+
+    .help-item .key {
+      width: 15ch;
+      padding: 0.75em;
+      border-radius: var(--tile-border-radius);
+      background-color: #333;
+      text-align: center;
+      gap: 1rem;
+      font-weight: normal;
+    }
+
+    .help-item .desc {
+      display: inline-block;
+    }
+
+    .controls {
+      display: none;
+      position: absolute;
+      bottom: 0;
+      background: rgba(128,128,128,0.25);
+      padding: 1rem;
+      width: 100%;
+      text-align: center;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+
+    body[data-loaded="true"] .controls {
+      display: block;
+    }
+
+    .controls button {
+      display: inline-block;
+      border: 0 none;
+      outline: none;
+
+      width: 2.5rem;
+
+      margin: 1rem 0;
+
+      background: none;
+      cursor: pointer;
+      transition: filter calc(var(--transition-base) / 2);
+    }
+
+    .controls svg {
+      fill: var(--theme-color);
+      width: 24px;
+      height: 24px;
+      filter: drop-shadow(0px 0px 4px #FFF);
+    }
+
+    .controls button:hover, .hasSubtitles .controls .btn-subtitles:hover {
+      filter: saturate(0.1) brightness(4);
+    }
+
+    .controls button:active {
+      filter: brightness(0.5);
+    }
+
+    button.btn-fullscreen {
+      display: none;
+    }
+
+    button.btn-fullscreen.enabled {
+      display: inline-block;
+    }
+
+    .btn-fullscreen .collapse, /* Hide `.collapse` by default */
+    :-webkit-full-screen .btn-fullscreen .expand, /* Hide collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .expand {
+      display: none;
+    }
+
+    .btn-fullscreen .expand, /* Show `.expand` by default */
+    :-webkit-full-screen .btn-fullscreen .collapse, /* Show collapse in fullscreen mode */
+    :fullscreen          .btn-fullscreen .collapse {
+      display: block;
+    }
+
+    .controls .btn-cloud {
+      /* Only show this button if cloud streaming is enabled/possible */
+      display: none;
+    }
+
+    .controls .btn-cloud:hover {
+      filter: brightness(1.5);
+    }
+
+    button.btn-onedrive {
+      width: 37px;
+    }
+
+    button.btn-gdrive {
+      width: 24px;
+    }
+
+    .primary-buttons {
+      position: relative;
+    }
+
+    .sources {
+      position: absolute;
+      right: 0;
+      top: 0;
+    }
+
+    /* Make the `.sources` group together into it's own line if it gets too skinny */
+    @media screen and (max-width: 500px) {
+      .sources {
+        position: relative;
+      }
+
+      .sources button {
+        margin: 0;
+      }
+    }
+
+    .links {
+      height: 100vh;
+      min-width: var(--tile-width);
+      overflow: auto;
+      margin-top: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-bottom: 2rem;
+    }
+
+    .links a {
+      /* background */
+      position: relative;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+
+      width: var(--tile-width);
+      height: var(--tile-height);
+
+      padding: 0;
+
+      background-color: #666;
+      color: #DDD;
+      text-decoration: none;
+      border-top: 1px solid #000;
+    }
+
+    .links a:last-of-type {
+      border-bottom-right-radius: var(--tile-border-radius);
+      border-bottom-left-radius: var(--tile-border-radius);
+    }
+
+    .links a .title {
+      /* Title */
+      position: relative;
+      display: inline-block;
+      bottom: 0;
+      left: 0;
+
+      overflow-wrap: break-word;
+      font-size: 1.25rem;
+      line-height: 1.5rem;
+      text-align: left;
+      padding: 1rem 0;
+    }
+
+    .folder .title svg {
+      height: 1em;
+      width: 1em;
+      margin-bottom: -0.18em;
+    }
+    .folder:first-of-type .title svg {
+      display: inline-block;
+    }
+
+    .links a.file-item .arrow {
+      display: inline-block;
+      padding: 1rem;
+    }
+
+    .links a.file .arrow {
+      filter: drop-shadow(0 0 0.1rem rgba(0, 0, 0, 0.5));
+    }
+
+    .links a.file {
+      background-size: cover;
+      background-image: var(--image-url);
+    }
+
+    .links a.file:hover:not(.current) {
+      background-blend-mode: luminosity;
+    }
+
+    .current {
+      background-blend-mode: soft-light;
+    }
+
+    .links a.folder {
+      background-color: #333;
+    }
+
+    /* SVG Icons */
+    .xlinks {
+      display: none;
+    }
+
+    .links a.folder:hover {
+      background-color: #444;
+    }
+
+    .links a.file:hover {
+      background-color: #777;
+    }
+
+    .file-item:hover .arrow svg,
+    .file-item.current .arrow svg {
+      transform: scale(2) rotate(360deg);
+    }
+
+    .file svg,
+    .file svg path,
+    .folder svg,
+    .folder svg path {
+      fill: #FFF;
+      transition: all calc(2 * var(--transition-base)) ease;
+    }
+
+    .file:hover svg {
+      fill: var(--theme-color);
+    }
+
+    .current .arrow svg {
+      fill: var(--playing-color);
+    }
+
+    .folder svg {
+      fill: var(--folder-color);
+      transition: all var(--transition-base);
+    }
+
+    .folder:hover svg {
+      filter: brightness(2);
+    }
+
+    .folder .arrow .closed, .folder:first-of-type .arrow .open {
+      display: block;
+    }
+    .folder .arrow .open, .folder:first-of-type .arrow .closed {
+      display: none;
+    }
+
+    .no-transitions * {
+      transition: none !important;
+    }
+  </style>
+</head>
+<body>
+  <section class='links'></section>
+  <div class='viewerContainer'>
+    <iframe class='view' sandbox='allow-same-origin'></iframe>
+    <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
+    <ul class='help modal'>
+      <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Jump to 0%-90% of text file</span></li>
+      <li class='help-item modal-item'><span class='key'>Backspace</span><span class='desc'>Go to previous folder</span></li>
+      <li class='help-item modal-item'><span class='key'>i</span><span class='desc'>File information</span></li>
+      <li class='help-item modal-item'><span class='key'>f</span><span class='desc'>Toggle Fullscreen</span></li>
+      <li class='help-item modal-item'><span class='key'>Ctrl+V</span><span class='desc'>Paste and View</span></li>
+      <li class='help-item modal-item'><span class='key'>? or F1</span><span class='desc'>This help information</span></li>
+    </ul>
+    <section class='controls'>
+      <section class='primary-buttons'>
+        <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svgCollapse'></svg><svg class='expand'><use xlink:href='#svgExpand'></svg></button>
+        <button class='btn-fileinfo' type='button' title='File information'><svg><use xlink:href='#svgInfo'></svg></button>
+        <button class='btn-close' type='button' title='Close file'><svg><use xlink:href='#svgCloseDocument'></svg></button>
+          <section class='sources'>
+          <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svgOneDrive'></svg></button>
+          <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width='18' height='24'><use xlink:href='#svgGoogleDrive'></svg></button>
+          <button class='btn-local-file' type='button' title='Open local file'><svg><use xlink:href='#svgFolderOpenVertical'></svg></button>
+        </section>
+      </section>
+    </section>
+  </div>
+  <section class='xlinks'>
+    <!-- https://github.com/microsoft/fluentui-system-icons -->
+    <!-- ic_fluent_document_dismiss_24_filled.svg -->
+    <svg id='svgCloseDocument'><path d="M12 2V8C12 9.10457 12.8954 10 14 10H20V20C20 21.1046 19.1046 22 18 22H11.1904C12.3112 20.8321 13 19.2465 13 17.5C13 13.9101 10.0899 11 6.5 11C5.6141 11 4.76959 11.1772 4 11.4982V4C4 2.89543 4.89543 2 6 2H12Z"/>
+      <path d="M13.5 2.5V8C13.5 8.27614 13.7239 8.5 14 8.5H19.5L13.5 2.5Z"/>
+      <path d="M6.5 12C9.53757 12 12 14.4624 12 17.5C12 20.5376 9.53757 23 6.5 23C3.46243 23 1 20.5376 1 17.5C1 14.4624 3.46243 12 6.5 12ZM8.97823 15.7313C9.1735 15.5361 9.1735 15.2195 8.97823 15.0242C8.78297 14.829 8.46639 14.829 8.27113 15.0242L6.50133 16.793L4.73246 15.0241C4.5372 14.8289 4.22061 14.8289 4.02535 15.0241C3.83009 15.2194 3.83009 15.536 4.02535 15.7312L5.79401 17.4999L4.02535 19.2675C3.83009 19.4628 3.83009 19.7794 4.02535 19.9746C4.22061 20.1699 4.5372 20.1699 4.73246 19.9746L6.50112 18.207L8.27095 19.9768C8.46621 20.1721 8.78279 20.1721 8.97806 19.9768C9.17332 19.7816 9.17332 19.465 8.97806 19.2697L7.20843 17.5001L8.97823 15.7313Z"/>
+    </svg>
+    <!-- ic_fluent_folder_24_filled.svg -->
+    <svg id='svgFolderClosed'><path d='M13.821,6.5 L19.75,6.5 C20.8867338,6.5 21.826582,7.34296748 21.9785265,8.43788437 L21.9948092,8.59595119 L22,8.75 L22,17.75 C22,18.940864 21.0748384,19.9156449 19.9040488,19.9948092 L19.75,20 L4.25,20 C3.05913601,20 2.08435508,19.0748384 2.00519081,17.9040488 L2,17.75 L2,10.499 L8.2069251,10.5 L8.40335497,10.4914126 C8.79396018,10.4571882 9.16895973,10.3214197 9.49094085,10.0976522 L9.64734,9.97849788 L13.821,6.5 Z M8.2069251,4 C8.66748759,4 9.11529621,4.14128575 9.49094085,4.40234784 L9.64734,4.52150212 L11.75,6.273 L8.6870634,8.82616596 L8.60221452,8.8873763 C8.51362501,8.94231824 8.41452303,8.9781981 8.31129371,8.99270416 L8.2069251,9 L2,8.999 L2,6.25 C2,5.05913601 2.92516159,4.08435508 4.09595119,4.00519081 L4.25,4 L8.2069251,4 Z'/></svg>
+    <!-- ic_fluent_folder_open_24_filled.svg -->
+    <svg id='svgFolderOpen'><path d='M1.99957 6.24922C2 5.00689 3.00724 4 4.24957 4H8.20509C8.73063 4 9.23959 4.18396 9.64368 4.51998L12.0247 6.49988H17.75C18.9926 6.49988 20 7.50724 20 8.74988V9.50195H6.42105C5.38827 9.50195 4.48811 10.2051 4.23802 11.2071L2.316 18.9079C2.35895 18.7356 2.315 18.9118 2.316 18.9079C2.11246 18.5694 1.99546 18.173 1.99561 17.7492L1.99957 6.24922Z M3.74448 19.3789C3.66573 19.6945 3.90439 20 4.2296 20H18.4693C19.2723 20 19.9722 19.4535 20.167 18.6745L21.9302 11.6232C22.0091 11.3077 21.7704 11.002 21.4451 11.002H6.42105C6.07679 11.002 5.77674 11.2363 5.69337 11.5703L3.74448 19.3789Z'/></svg>
+    <!-- ic_fluent_folder_open_vertical_20_filled.svg -->
+    <svg id='svgFolderOpenVertical'><path d='M4.1369,2.87306 L10.0437,5.17014 C10.5758538,5.37711231 10.9404053,5.86607751 10.9933413,6.42663963 L11,6.56815 L11,18.1574 C10.7250286,18.2553714 10.4180245,18.2745837 10.1126094,18.1919254 L9.96019,18.142 L5.60032,16.4603 C4.69273412,16.1102765 4.07596069,15.2685381 4.00653955,14.3090021 L4,14.1278 L4,3.5 C4,3.3321425 4.02757375,3.17072562 4.078435,3.02002719 L4.1369,2.87306 Z M14.5,2 C15.2796706,2 15.9204457,2.59488554 15.9931332,3.35553954 L16,3.5 L16,7.37689 C16,7.45865667 15.9933333,7.54021444 15.9800593,7.62075444 L15.9552,7.7407 L15,11.5616 L15,14.5 C15,15.2796706 14.4050879,15.9204457 13.6444558,15.9931332 L13.5,16 L12,16 L12,6.56815 C12,5.59775941 11.4392803,4.72105242 10.5722047,4.30971206 L10.4061,4.23813 L4.93446,2.11027 C5.0653575,2.056945 5.20548,2.02158063 5.35176891,2.00723125 L5.5,2 L14.5,2 Z'></path></svg>
+    <!-- ic_fluent_arrow_up_24_filled.svg -->
+    <svg id='svgFolderArrow'><path d='M4.28401,10.2955 C3.89639,10.6889 3.90108,11.322 4.29449,11.7097 C4.68789,12.0973 5.32104,12.0926 5.70866,11.6992 L11,6.32889 L11,20 C11,20.5523 11.4477,21 12,21 C12.5523,21 13,20.5523 13,20 L13,6.33538 L18.2849,11.6992 C18.6726,12.0926 19.3057,12.0973 19.6991,11.7097 C20.0925,11.322 20.0972,10.6889 19.7096,10.2955 L12.8872,3.3713 C12.3976,2.87438 11.596,2.87438 11.1064,3.3713 L4.28401,10.2955 Z'/></svg>
+    <!-- ic_fluent_info_24_filled.svg -->
+    <svg id='svgInfo' ><path d="M12.0000002,1.99896738 C17.523704,1.99896738 22.0015507,6.47681407 22.0015507,12.0005179 C22.0015507,17.5242217 17.523704,22.0020684 12.0000002,22.0020684 C6.47629639,22.0020684 1.99844971,17.5242217 1.99844971,12.0005179 C1.99844971,6.47681407 6.47629639,1.99896738 12.0000002,1.99896738 Z M11.996193,10.2495494 C11.4833573,10.2498854 11.0609387,10.6362021 11.0034989,11.1335785 L10.9968474,11.250204 L11.000448,16.751798 L11.0072521,16.8684147 C11.0653426,17.3657155 11.4882665,17.751479 12.0011022,17.7511438 C12.5139379,17.7508078 12.9363565,17.3644911 12.9937963,16.8671147 L13.0004478,16.7504892 L12.9968474,11.2488952 L12.9900433,11.1322785 C12.9319526,10.6349777 12.5090287,10.2492142 11.996193,10.2495494 Z M12.0004478,6.5 C11.3092523,6.5 10.7489277,7.06032464 10.7489277,7.75152012 C10.7489277,8.44271559 11.3092523,9.00304023 12.0004478,9.00304023 C12.6916433,9.00304023 13.2519679,8.44271559 13.2519679,7.75152012 C13.2519679,7.06032464 12.6916433,6.5 12.0004478,6.5 Z"></path></svg>
+    <!-- ic_fluent_document_24_filled.svg -->
+    <svg id="svgDocument"><path d="M12,2 L12,8 C12,9.10457 12.8954,10 14,10 L20,10 L20,20 C20,21.1046 19.1046,22 18,22 L6,22 C4.89543,22 4,21.1046 4,20 L4,4 C4,2.89543 4.89543,2 6,2 L12,2 Z M13.5,2.5 L19.5,8.5 L14,8.5 C13.7545778,8.5 13.5504,8.32312296 13.5080571,8.08987501 L13.5,8 L13.5,2.5 Z"></path></svg>
+    <!-- ic_fluent_arrow_expand_24_filled.svg -->
+    <svg id='svgExpand'><path d='M7.6687288,14.9228932 C8.05925309,14.5323689 8.69241807,14.5323689 9.08294236,14.9228932 C9.47346666,15.3134175 9.47346666,15.9465825 9.08294236,16.3371068 L9.08294236,16.3371068 L6.415,19.0042145 L8,19.0042145 C8.51283584,19.0042145 8.93550716,19.3902547 8.99327227,19.8875934 L9,20.0042145 C9,20.5564992 8.55228475,21.0042145 8,21.0042145 L8,21.0042145 L4,21.0042145 C3.44771525,21.0042145 3,20.5564992 3,20.0042145 L3,20.0042145 L3,16.0042145 C3,15.4519298 3.44771525,15.0042145 4,15.0042145 C4.55228475,15.0042145 5,15.4519298 5,16.0042145 L5,16.0042145 L5,17.5912145 L7.6687288,14.9228932 Z M16.0050107,21.0042145 C15.452726,21.0042145 15.0050107,20.5564992 15.0050107,20.0042145 C15.0050107,19.4519298 15.452726,19.0042145 16.0050107,19.0042145 L16.0050107,19.0042145 L17.5880107,19.0042145 L14.9226154,16.3368288 C14.5622731,15.9762031 14.5347666,15.4089612 14.8399456,15.0167899 L14.9231713,14.9226153 C15.313849,14.5322446 15.947014,14.5324935 16.3373847,14.9231712 L16.3373847,14.9231712 L19.0050107,17.5932145 L19.0050107,16.0042145 C19.0050107,15.4913787 19.3910509,15.0687073 19.8883896,15.0109422 L20.0050107,15.0042145 C20.5572954,15.0042145 21.0050107,15.4519298 21.0050107,16.0042145 L21.0050107,16.0042145 L21.0050107,20.0042145 C21.0050107,20.5564992 20.5572954,21.0042145 20.0050107,21.0042145 L20.0050107,21.0042145 L16.0050107,21.0042145 Z M8,3 C8.55228475,3 9,3.44771525 9,4 C9,4.55228475 8.55228475,5 8,5 L8,5 L6.417,5 L9.08238468,7.66817123 C9.44272691,8.02879686 9.47023348,8.59603878 9.1650544,8.98821005 L9.08182877,9.08238468 C8.691151,9.47275543 8.05798607,9.47250654 7.66761532,9.08182877 L7.66761532,9.08182877 L5,6.412 L5,8 C5,8.51283584 4.61395981,8.93550716 4.11662113,8.99327227 L4,9 C3.44771525,9 3,8.55228475 3,8 L3,8 L3,4 C3,3.44771525 3.44771525,3 4,3 L4,3 L8,3 Z M20.0049977,3 C20.5572824,3 21.0049977,3.44771525 21.0049977,4 L21.0049977,4 L21.0049977,8 C21.0049977,8.55228475 20.5572824,9 20.0049977,9 C19.452713,9 19.0049977,8.55228475 19.0049977,8 L19.0049977,8 L19.0049977,6.412 L16.3372498,9.08196378 C15.9768387,9.44252063 15.4096133,9.47036487 15.0172604,9.16541931 L14.9230362,9.08224975 C14.532433,8.69180444 14.532305,8.05863947 14.9227503,7.66803622 L14.9227503,7.66803622 L17.5889977,5 L16.0049977,5 C15.4921619,5 15.0694905,4.61395981 15.0117254,4.11662113 L15.0049977,4 C15.0049977,3.44771525 15.452713,3 16.0049977,3 L16.0049977,3 L20.0049977,3 Z'></path></svg>
+    <!-- ic_fluent_arrow_minimize_24_filled.svg -->
+    <svg id='svgCollapse'><path d='M10.498103,12.5046266 C11.0109388,12.5046266 11.4336102,12.8906668 11.4913753,13.3880055 L11.498103,13.5046266 L11.498103,21.0085171 C11.498103,21.5608018 11.0503877,22.0085171 10.498103,22.0085171 C9.98526715,22.0085171 9.56259583,21.6224769 9.50483072,21.1251382 L9.49810299,21.0085171 L9.49757619,15.9154145 L3.70710678,21.7071068 C3.34662282,22.0675907 2.77939176,22.0953203 2.38710056,21.7902954 L2.29289322,21.7071068 C1.93240926,21.3466228 1.90467972,20.7793918 2.20970461,20.3871006 L2.29289322,20.2928932 L8.08057619,14.5044145 L2.99657619,14.5046266 C2.44429144,14.5046266 1.99657619,14.0569114 1.99657619,13.5046266 C1.99657619,12.9917908 2.38261638,12.5691195 2.87995507,12.5113544 L2.99657619,12.5046266 L10.498103,12.5046266 Z M13.4990964,1.99941454 C14.0119323,1.99941454 14.4346036,2.38545473 14.4923687,2.88279341 L14.4990964,2.99941454 L14.4985762,8.08641454 L20.2928932,2.29289322 C20.6533772,1.93240926 21.2206082,1.90467972 21.6128994,2.20970461 L21.7071068,2.29289322 C22.0675907,2.65337718 22.0953203,3.22060824 21.7902954,3.61289944 L21.7071068,3.70710678 L15.9105762,9.50241454 L21.0006232,9.50330499 C21.552908,9.50330499 22.0006232,9.95102024 22.0006232,10.503305 C22.0006232,11.0161408 21.614583,11.4388122 21.1172444,11.4965773 L21.0006232,11.503305 L13.4990964,11.503305 C12.9862606,11.503305 12.5635893,11.1172648 12.5058242,10.6199261 L12.4990964,10.503305 L12.4990964,2.99941454 C12.4990964,2.44712979 12.9468117,1.99941454 13.4990964,1.99941454 Z'></path></svg>
+    <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/d/d3/Microsoft_Office_OneDrive_%282018%E2%80%93present%29.svg -->
+    <svg id='svgCloud'><path d='M6.33663542,10.0000028 C6.81096059,7.29275763 9.17457638,5.25 12,5.25 C14.8254236,5.25 17.1890394,7.29275763 17.6633646,10.0000028 L17.75,10 C19.959139,10 21.75,11.790861 21.75,14 C21.75,16.209139 19.959139,18 17.75,18 L6.25,18 C4.040861,18 2.25,16.209139 2.25,14 C2.25,11.790861 4.040861,10 6.25002438,10 L6.33663542,10.0000028 Z'></path></svg>
+    <svg id='svgOneDrive'>
+      <path d='m14.4993603046,12.68824475238037 l4.953813,-4.737589000000001 c-1.0290212,-4.012493 -5.1159810000000006,-6.431033 -9.128474,-5.401872 c-1.806915,0.46339040000000015 -3.3764030000000003,1.5835146000000002 -4.401836,3.1417720000000005 c0.0766803,-0.0019339000000000012 8.576264,6.997689 8.576264,6.997689 z' fill='#0364b8' stroke-width='0' id='svg_2'/>
+      <path d='m9.1517773046,6.582246752380371 l-0.0002330000000000001,0.0008155000000000004 c-0.9465858,-0.5862746000000001 -2.0382607,-0.8961646000000002 -3.1517910000000002,-0.8946501000000001 c-0.025723200000000005,0 -0.05100370000000002,0.0016310000000000005 -0.0766803,0.0019339000000000012 c-3.311862,0.04103130000000002 -5.963635,2.759186 -5.922627,6.071048 c0.014865400000000004,1.2013946 0.39025170000000003,2.370542 1.0774852000000001,3.356132 l7.421749,-0.9295302 l5.690093,-4.588236 z' fill='#0078d4' stroke-width='0' id='svg_3'/>
+      <path d='m19.4531733046,7.950655752380371 c-0.10890420000000003,-0.007269600000000004 -0.21834430000000007,-0.012302400000000003 -0.3290659000000001,-0.012302400000000003 c-0.6645859000000002,-0.0006524000000000004 -1.3222517,0.13509340000000003 -1.9322690000000002,0.3988261000000001 l-0.00013980000000000004,-0.0005126000000000004 l-3.0019720000000003,1.2633260000000002 l3.309532,4.088218 l5.916569000000001,1.4382624000000002 c1.2768167000000001,-2.370309 0.3903216000000001,-5.3268460000000015 -1.9800340000000003,-6.6036860000000015 c-0.6124871000000001,-0.3299280000000001 -1.2885133000000002,-0.5249257 -1.9826203,-0.5719218000000001 v-0.00002330000000000001 z' fill='#1490df' stroke-width='0' id='svg_4'/>
+      <path d='m1.0779545046000003,15.11773575238037 c1.1206135,1.6111717 2.9593330000000004,2.5713880000000002 4.9218920000000015,2.570456 h13.124424 c1.7928418000000004,0.0005126000000000004 3.441177,-0.9833065999999999 4.29186,-2.561602 l-9.226334000000001,-5.526527000000001 z' fill='#28a8ea' stroke-width='0' id='svg_5'/>
+    </svg>
+    <!-- Based on SVG from https://upload.wikimedia.org/wikipedia/commons/a/ad/Logo_of_Google_Drive.svg -->
+    <svg id='svgGoogleDrive'>
+      <path style='fill:#fccd48' d='M6.112017465007343,2.85274083196329 L11.884426325760373,2.85500390178011 L17.2620935892589,12.172385633327938 L11.499060245557772,12.173355520392281 z'/>
+      <path style='fill:#0ba25e' d='M3.616513460742275,17.144350020887746 L0.7379064321147182,12.165273128189341 L6.112017465007343,2.85274083196329 L8.998060248538135,7.835050681542867 z'/>
+      <path style='fill:#2a71e9' d='M3.616513460742275,17.144350020887746 L6.491564258763939,12.167212902318052 L17.2620935892589,12.172385633327938 L14.388335966003016,17.147259682080808 z'/>
+      <path style='fill:#e3b73a' d='M10.242417666910494,10.000485200554223 L17.2620935892589,12.169863926960613 L11.499060245557772,12.173420179529906 z'/>
+      <path style='fill:#089156' d='M8.998060248538135,7.835050681542867 L7.7478835437197695,10.001455087618574 L6.112017465007343,2.85274083196329 z'/>
+      <path style='fill:#296ad9' d='m3.616513460742275,17.144350020887746 l2.8750507980216633,-4.977137118569696 l2.4856435466759867,0.0002909661193057999 z'/>
+    </svg>
+  </section>
+  <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
+  <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
+  <script src="https://cdn.jsdelivr.net/gh/jitbit/HtmlSanitizer@master/HtmlSanitizer.js"></script>
+  <script type='text/javascript' src='https://cdn.statically.io/gh/commonmark/commonmark.js/master/dist/commonmark.min.js'></script>
+  <script defer>
+    /* IMPORTANT!!!
+
+      If you would like support for opening directly from the cloud, you must supply the appropriate keys
+      in the `app.options.cloud` below AND register your app with Google and/or Microsoft.
+
+      OneDrive Docs: https://docs.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration?view=odsp-graph-online
+      GDrive Docs: https://developers.google.com/drive/api/v3/picker
+
+    */
+
+    window.app = {
+      options: {
+        cloud: {
+          onedrive: {
+            clientId: '98a393da-bb36-4061-82df-f847ed49ce8a'
+          },
+          gdrive: {
+            developerKey: 'AIzaSyASwr9ZqtB_DGszfJ7E1nIq-SRO44rsXdc', // Browser API key obtained from the Google API Console.
+            clientId: '350482528905-uplflng9avfo3p5sghlgr0g059r04v0b.apps.googleusercontent.com', // Client ID obtained from the Google API Console. Replace with your own Client ID.
+            appId: '350482528905' // console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+          }
+        }
+      }
+    };
+
+    (function utilitiesIIFE(global){
+      // jQuery-like syntactic sugar. Only queries for one element. Does not loop over multiple like jQuery
+      function $(query) {
+        if (typeof query === 'undefined') throw 'No query provided to $';
+
+        var el;
+        if (typeof query.nodeType === 'string') {
+          el = query;
+        } else if (query[0] === '<') {
+          const container = document.createElement('div');
+          container.innerHTML = query;
+          el = container.firstChild;
+        } else if (typeof query === 'string') {
+          el = document.querySelector(query);
+        } else {
+          el = query;
+        }
+
+        if (el) {
+          el.on = (e, fn, ...args) => {
+            if (args.length > 0) {
+              el.addEventListener(e, fn, ...args);
+            } else {
+              el.addEventListener(e, fn, false);
+            }
+
+            return el;
+          };
+
+          el.off = (eventType, callback) => { el.removeEventListener(eventType, callback); return el; }
+
+          el.once = (e, fn) => el.addEventListener(e, fn, {once: true});
+
+          el.trigger = (eventType, detail) => {
+            detail = detail ? { detail: detail } : undefined;
+            const e = new CustomEvent(eventType, detail);
+            el.dispatchEvent(e);
+
+            return el;
+          };
+
+          el.hasClass =    c => el.classList.contains(c);
+          el.addClass =    c => { el.classList.add(c); return el; }
+          el.removeClass = c => { el.classList.remove(c); return el; }
+          el.toggleClass = c => { el.classList.toggle(c); return el; }
+          el.append = element => { el.appendChild($(element)); return el; }
+          el.remove = () => { el.parentNode.removeChild(el); return el; }
+          el.show = () => { el.style.display = 'initial'; return el; }
+          el.attr = (name, val) => {
+            if (isUndefined(val)) {
+              return el.getAttribute(name);
+            } else {
+              el.setAttribute(name, val);
+              return el;
+            }
+          };
+          el.removeAttr = name => { el.removeAttribute(name); return el; }
+          el.val = () => el.value;
+          el.find = q => $(q, el);
+          el.html = h => {
+            if (isUndefined(h)) {
+              return el.innerHTML;
+            } else {
+              el.innerHTML = h;
+              return el;
+            }
+          };
+        }
+
+        function isUndefined(v) {
+          return typeof v === 'undefined';
+        }
+
+        return el;
+      }
+      global.$ = $;
+
+      function delay(ms, fn) {
+        fn = fn || function(){};
+
+        const p = new Promise((resolve) => {
+          setTimeout(() => resolve(fn()), ms);
+        });
+
+        return p;
+      }
+      global.delay = delay;
+
+      function throttle(func, wait, options) {
+        var context, args, result;
+        var timeout = null;
+        var previous = 0;
+
+        if (!options) options = {};
+        var later = function() {
+          previous = options.leading === false ? 0 : Date.now();
+          timeout = null;
+          result = func.apply(context, args);
+          if (!timeout) context = args = null;
+        };
+
+        return function() {
+          var now = Date.now();
+          if (!previous && options.leading === false) previous = now;
+          var remaining = wait - (now - previous);
+          context = this;
+          args = arguments;
+          if (remaining <= 0 || remaining > wait) {
+            if (timeout) {
+              clearTimeout(timeout);
+              timeout = null;
+            }
+            previous = now;
+            result = func.apply(context, args);
+            if (!timeout) context = args = null;
+          } else if (!timeout && options.trailing !== false) {
+            timeout = setTimeout(later, remaining);
+          }
+          return result;
+        };
+      }
+      global.throttle = throttle;
+
+      function store(key, val) {
+        try {
+          return localStorage.setItem(key, val);
+        } catch (e) {
+          console.warn(`Failed to store: ${key}`, e);
+          return null;
+        }
+      }
+      global.store = store;
+
+      function retrieve(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          console.warn(`Failed to retrieve: ${key}`, e);
+          return null;
+        }
+      }
+      global.retrieve = retrieve;
+
+      function getCSSVariable(v) {
+        const val = getComputedStyle(document.body).getPropertyValue(v);
+
+        if (val == +val) {
+          return +val; // Convert to number
+        }
+
+        return val;
+      }
+      global.getCSSVariable = getCSSVariable;
+
+      function limitPrecision(v, places) {
+        const factor = Math.pow(10, places);
+        return Math.round(v * factor) / factor;
+      }
+      global.limitPrecision = limitPrecision;
+    })(this);
+
+    (async function pwaIIFE() {
+      const icon = document.querySelector('link[rel="shortcut icon"').href;
+      const metadata = await imageMetadata(icon);
+
+      const manifest = {
+        short_name: document.title,
+        name: document.title,
+        description: document.querySelector('meta[name="description"]').content,
+        background_color: '#FFFFFF',
+        theme_color: getCSSVariable('--theme-color'),
+        color: getCSSVariable('--theme-color'),
+        icons: [
+          {
+            src: icon,
+            sizes: `${metadata.width}x${metadata.height}`,
+            type: metadata.type
+          }
+        ],
+        display: 'standalone',
+        start_url: `${window.location.origin}${window.location.pathname}`,
+        scope: window.pathname
+      }
+
+      setPWAManifest(manifest);
+
+      function setPWAManifest(manifest) {
+        const json = JSON.stringify(manifest);
+        const base64 = btoa(json);
+        const mimeType = 'application/json';
+        const dataURI = `data:${mimeType};base64,${base64}`;
+
+        const link = document.createElement('link');
+        link.setAttribute('rel', 'manifest');
+        link.setAttribute('href', dataURI);
+
+        document.querySelector('head').appendChild(link);
+      }
+
+      function imageMetadata(dataURI) {
+        const img = document.createElement('img');
+
+        const mimeRe = /data:([\w\/+]+);/i;
+        const type = mimeRe.exec(dataURI)[1];
+
+        const promise = new Promise((resolve, reject) => {
+          img.onload = function imageSizeLoad() {
+            const width = img.naturalWidth;
+            const height = img.naturalHeight;
+            resolve({ height, width, type });
+          }
+        });
+
+        img.src = dataURI;
+
+        return promise;
+      }
+    })();
+
+    (function socialMetadataIIFE(){
+    const metadata = {
+      title: document.querySelector('title').textContent,
+      description: document.querySelector('meta[name="description"]').content,
+      type: 'article',
+      icon: document.querySelector('link[rel="shortcut icon"').href,
+      backgroundColor: '#FF0099'
+    };
+
+    setMetadata(metadata);
+
+    function setMetadata(metadata) {
+
+      function setTitle(title){
+        const metas = [
+          'og:site_name',
+          'twitter:title',
+          'og:title'
+        ];
+
+        setMetas(metas, title);
+      }
+
+      function setIcon(iconDataURI) {
+        const metas = [
+          'twitter:image:src',
+          'msapplicationTileImage',
+          'og:image'
+        ];
+
+        setMetas(metas, iconDataURI);
+
+        const links = [
+          'apple-touch-icon'
+        ];
+
+        setLinks(links, iconDataURI);
+      }
+
+      function setMetas(metas, content) {
+        metas.forEach(function metaFn(meta) {
+          const metadata = {
+            prop: meta,
+            content: content
+          };
+
+          append(createMeta(metadata));
+        });
+      }
+
+      function setLinks(links, href) {
+        links.forEach(function linkFn(rel) {
+          const link = {
+            rel: rel,
+            href: href
+          };
+
+          append(createLink(link));
+        });
+      }
+
+      function setDescription(desc) {
+        const metas = [
+          'og:desctription',
+          'twitter:description'
+        ];
+
+        setMetas(metas, desc);
+      }
+
+      function setType(type){
+        const metadata = {
+          prop: type,
+          content: 'og:type'
+        };
+
+        append(createMeta(metadata));
+      }
+
+      function createLink(linkMetadata) {
+        const rel = linkMetadata.rel;
+        const href = linkMetadata.href;
+
+        const link = document.createElement('link');
+        link.rel = rel;
+        link.href = href;
+
+        return link;
+      }
+
+      function createMeta(metaMetadata) {
+        const prop = metaMetadata.prop;
+        const content = metaMetadata.content;
+
+        const meta = document.createElement('meta');
+        meta.property = prop;
+        meta.name = prop;
+        meta.content = content;
+
+        return meta;
+      }
+
+      function append(el) {
+        const $head = document.querySelector('head');
+        $head.appendChild(el);
+      }
+
+
+      if (metadata.title) {
+        setTitle(metadata.title);
+      }
+
+      if (metadata.icon) {
+        setIcon(metadata.icon);
+      }
+
+      if (metadata.type) {
+        setType(metadata.type);
+      }
+
+      if (metadata.description) {
+        setDescription(metadata.description);
+      }
+
+      if (metadata.backgroundColor) {
+        append(createMeta({prop: 'msapplication-TileColor', content: metadata.backgroundColor}));
+      }
+    }
+
+  })();
+
+    (function filePickersIIFE(global) {
+      /*
+        You must supply the appropriate keys in the `app.options.cloud` at the top of this <script> block AND register your app with
+        Google and/or Microsoft.
+
+        markdown.html also *must be served over HTTPS* for the Google and MS auth flows to work
+      */
+      function main() {
+        // Show the cloud buttons if OneDrive and/or Gdrive are configured
+        if (isHTTPS()) {
+          if (onedriveCheck()) $('.btn-onedrive').show();
+          if (gdriveCheck())   $('.btn-gdrive').show();
+        }
+      }
+
+      function isHTTPS() {
+        return location.protocol === 'https:';
+      }
+
+      function onedriveCheck() {
+        return isSet(app.options.cloud.onedrive.clientId);
+      }
+
+      function gdriveCheck() {
+        const opts = app.options.cloud;
+        return isSet(opts.gdrive.developerKey) && isSet(opts.gdrive.clientId) && isSet(opts.gdrive.appId);
+      }
+
+      function isSet(v) {
+        return (typeof v !== 'undefined' && v.length > 0);
+      }
+
+      function onedrive() {
+        const p = new Promise((resolve, reject) => {
+          function complete(res) {
+            if (!res || !res.value || !res.value[0]) {
+              console.warn('No file returned from OneDrive');
+              return;
+            }
+
+            const file = res.value[0];
+            const metadata = {
+              source: 'OneDrive',
+              id: file.id,
+              name: file.name,
+              url: file['@microsoft.graph.downloadUrl'],
+              size: file.size,
+              mimeType: file.file.mimeType
+            };
+            resolve(metadata);
+          }
+
+          var opts = {
+            clientId: app.options.cloud.onedrive.clientId,
+            action: 'download',
+            multiSelect: false,
+            advanced: {
+              queryParameters:
+                'select=id,name,size,file,@microsoft.graph.downloadUrl',
+              filter: 'txt,md',
+              navigation: {
+                sourceTypes: ['OneDrive', 'Sites', 'Recent']
+              },
+              viewType: 'files'
+            },
+            success: complete,
+            cancel: complete,
+            error: reject
+          };
+
+          global.OneDrive.open(opts);
+        });
+
+        return p;
+      }
+      global.onedrive = onedrive;
+      function gdrive() {
+        const p = new Promise((resolve, reject) => {
+          const opts = app.options.cloud.gdrive;
+          const developerKey = opts.developerKey; // The Browser API key obtained from the Google API Console.
+          const clientId = opts.clientId; // The Client ID obtained from the Google API Console. Replace with your own Client ID.
+          const appId = opts.appId; //  console.developers.google.com - 'Project number' under 'IAM & Admin' > 'Settings'
+
+          const scope = ['https://www.googleapis.com/auth/drive.file'];
+
+          var gdrivePickerAPILoaded = false;
+          var oauthToken;
+
+          // Use the Google API Loader script to load the google.picker script.
+          function gdrivePickerLoad() {
+            global.gapi.load('auth', {
+              callback: function () {
+                global.gapi.auth.authorize(
+                  {
+                    client_id: clientId,
+                    scope: scope,
+                    immediate: false
+                  },
+                  function (authResult) {
+                    if (authResult && !authResult.error) {
+                      oauthToken = authResult.access_token;
+                      gdrivePickerCreate();
+                    }
+                  }
+                );
+              }
+            });
+            global.gapi.load('picker', {
+              callback: function () {
+                gdrivePickerAPILoaded = true;
+                gdrivePickerCreate();
+              }
+            });
+          }
+
+          function gdrivePickerCreate() {
+            if (gdrivePickerAPILoaded && oauthToken) {
+              const view = new global.google.picker.View(
+                global.google.picker.ViewId.DOCS
+              );
+              const gdrivePicker = new global.google.picker.PickerBuilder()
+                .setAppId(appId)
+                .setOAuthToken(oauthToken)
+                .setDeveloperKey(developerKey)
+                .addView(view)
+                .setCallback(gdriveCallback)
+                .build();
+              gdrivePicker.setVisible(true);
+
+              global.gdrivePicker = gdrivePicker;
+            }
+          }
+
+          function gdriveCallback(response) {
+            if (
+              global.google.picker.Action.PICKED &&
+              response.docs &&
+              response.docs[0]
+            ) {
+              const file = response.docs[0];
+
+              const metadata = {
+                source: 'Google Drive',
+                url: `https://drive.google.com/u/0/uc?id=${file.id}&export=download`,
+                id: file.id,
+                name: file.name,
+                size: file.sizeBytes,
+                mimeType: file.mimeType
+              };
+
+              resolve(metadata);
+            }
+          }
+
+          gdrivePickerLoad();
+        });
+
+        return p;
+      }
+      global.gdrive = gdrive;
+
+      main();
+    })(this);
+
+    // folder.api (https://github.com/pseudosavant/folder.api): v1.0
+    (function folderApiIIFE(global) {
+      'use strict';
+
+      function urlType(url) {
+        if (isHiddenFileOrFolder(url)) {
+          return 'hidden';
+        } else if (isFolder(url)) {
+          return 'folder';
+        } else if (isFile(url)) {
+          return 'file';
+        } else {
+          return 'unknown';
+        }
+      }
+
+      function isFolder(url) {
+        return (url[url.length - 1] === '/');
+      }
+
+      function isFile(url) {
+        return !isFolder(url);
+      }
+
+      function isHiddenFileOrFolder(url) {
+        const reHidden = /\/\..+$/i;
+        return url.toString().match(reHidden);
+      }
+
+      function parentFolder(url) {
+        const parts = url.split('/');
+        parts.pop(); // Remove trailing /
+        parts.pop(); // Remove current folder
+        return parts.join('/') + '/';
+      }
+
+      function urlToFoldername(url){
+        var pieces = url.split('/');
+        return pieces[pieces.length - 2]; // Return piece before final `/`
+      }
+
+      function urlToFilename(url) {
+        const re = /\/([^/]+)$/;
+        const parts = re.exec(url);
+        return (parts && parts.length > 1 ? parts[1] : url);
+      }
+
+      async function linkToMetadata(node, server) {
+        return (
+          typeof servers[server] === 'function' ?
+          servers[server](node) :
+          {}
+        );
+      }
+
+      async function getHeaderData(url) {
+        if (!url) return {};
+
+        try {
+          const res = await fetch(url);
+          const h = res.headers;
+          return h;
+        } catch (e) {
+          console.warn(e);
+          return {};
+        }
+      }
+
+      async function getServer(url) {
+        const h = await getHeaderData(url);
+        const server = (h.get('Server') ? h.get('Server').toString().toLowerCase() : undefined);
+        if (server && server.includes) {
+          if (server.includes('nginx')) {
+            return 'nginx';
+          } else if (server.includes('apache')) {
+            return 'apache';
+          } else if (server.includes('iis')) {
+            return 'iis'
+          }
+        }
+
+        return 'generic';
+      }
+
+      const servers = {
+        apache: function (node) {
+          const metadata = { date: undefined, size: undefined };
+
+          if (!node.parentNode || !node.parentNode.parentNode) return metadata;
+
+          const row = node.parentNode.parentNode;
+
+          const dateNode = row.querySelector('td:nth-of-type(3)');
+          if (dateNode) {
+            const dateRe = /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/g;
+            const dateResults = dateRe.exec(dateNode.textContent);
+
+            if (dateResults) {
+              const y = toNumber(dateResults[1]) || undefined;
+              const m = toNumber(dateResults[2]) || undefined;
+              const d = toNumber(dateResults[3]) || undefined;
+              const hours = toNumber(dateResults[4]) || undefined;
+              const mins = toNumber(dateResults[5]) || undefined;
+              metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
+            }
+          }
+
+          const sizeNode = row.querySelector('td:nth-of-type(4)');
+
+          if (sizeNode) {
+            const sizeRe = /(\d+)(\w)?/g;
+            const sizeResults = sizeRe.exec(sizeNode.textContent);
+
+            if (sizeResults) {
+              const val = toNumber(sizeResults[1]);
+              const unit = (isUndefined(sizeResults[2]) ? 'B' : sizeResults[2]);
+
+              const factor = {
+                B: 0, K: 1, M: 2, G: 3, T: 4
+              }
+
+              metadata.size = Math.floor(
+                val * Math.pow(1024, factor[unit])
+              );
+            }
+          }
+
+          return metadata;
+        },
+        nginx: function(node) {
+          const metadata = { date: undefined, size: undefined };
+
+          const metadataNode = node.nextSibling;
+          if (!metadataNode) return metadata;
+
+          const text = metadataNode.textContent;
+          const re = /(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})\s+(\d+)?/g;
+          const results = re.exec(text);
+
+          if (!results) return metadata;
+          const d = toNumber(results[1]) || undefined;
+          const m = results[2] || undefined;
+          const y = toNumber(results[3]) || undefined;
+          const hours = toNumber(results[4]) || undefined;
+          const mins = toNumber(results[5]) || undefined;
+          metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
+
+          metadata.size = toNumber(results[6]) || undefined;
+
+          return metadata;
+        },
+        iis: function(node) {
+          const metadata = { date: undefined, size: undefined };
+
+          const metadataNode = node.previousSibling;
+          if (!metadataNode) return metadata;
+
+          const re = /(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})\s(AM|PM)\s+(\d+)?/i;
+          const text = metadataNode.textContent;
+          const results = re.exec(text);
+          if (!results) return metadata;
+
+          const m = toNumber(results[1]) || undefined;
+          const d = toNumber(results[2]) || undefined;
+          const y = toNumber(results[3]) || undefined;
+          const hours = toNumber(results[4]) || undefined;
+          const mins = toNumber(results[5]);
+          metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
+
+          metadata.size = toNumber(results[7]) || undefined;
+
+          return metadata;
+        },
+        fallback: function(node) {
+          const metadata = { date: undefined, size: undefined };
+
+          const metadataNode = node.nextSibling;
+          if (!metadataNode) return metadata;
+
+          const text = metadataNode.textContent;
+          const re = /(\d{2})-(\w{3})-(\d{4})\s(\d{2}):(\d{2})\s+(\d+)?/g;
+          const results = re.exec(text);
+
+          if (!results) return metadata;
+          const d = toNumber(results[1]) || undefined;
+          const m = results[2] || undefined;
+          const y = toNumber(results[3]) || undefined;
+          const hours = toNumber(results[4]) || undefined;
+          const mins = toNumber(results[5]) || undefined;
+          metadata.date = new Date(`${m}-${d}, ${y} ${hours}:${mins}:00`);
+
+          metadata.size = toNumber(results[6]) || undefined;
+
+          return metadata;
+        },
+      }
+
+      async function getLinksFromFrame(frame, baseUrl) {
+        const server = await getServer(baseUrl) || 'generic';
+
+        var query;
+
+        switch (server) {
+          case 'apache':
+            query = 'td a';
+
+            if ([...frame.contentDocument.querySelectorAll(query)].length === 0) {
+              query = 'a'; // Fallback to any `<a>` if none are found
+            }
+
+            break;
+          case 'iis':
+          case 'nginx':
+          default:
+            query = 'a';
+            break;
+        }
+
+        const links = [...frame.contentDocument.querySelectorAll(query)];
+        const folders = [];
+        const files = [];
+
+        for (var i = 0; i < links.length; i++) {
+          const link = links[i];
+          const url = link.toString();
+          const type = urlType(url);
+
+          var target;
+          const metadata = await linkToMetadata(link, server);
+          const res = { url };
+
+          switch (type) {
+            case 'folder':
+              res.name = urlToFoldername(url);
+              res.type = 'child';
+              target = folders;
+              break;
+            case 'file':
+              res.name = urlToFilename(url);
+              target = files;
+              break;
+          }
+
+          if (metadata.size) res.size = metadata.size;
+          if (metadata.date) res.date = metadata.date;
+
+          if (target === folders) {
+            if (server === 'apache' && !metadata.date || // Apache never has a date for parent folders
+              url === '../' ||
+              url === parentFolder(baseUrl)
+            ) {
+              res.type = 'parent';
+            } else if (url === '/') {
+              res.type =  'root';
+            }
+          }
+
+          target.push(res);
+
+        }
+        return { server, folders, files };
+      }
+
+      async function folderApiRequest(url) {
+        console.info(`Going to: ${url}`);
+        const $frame = document.createElement('iframe');
+        $frame.style.visibility = 'hidden';
+
+        const promise = new Promise((resolve, reject) => {
+          $frame.addEventListener('error', reject, false);
+
+          $frame.addEventListener('load', async () => {
+            const links = await getLinksFromFrame($frame, url);
+            $frame.parentElement.removeChild($frame);
+
+            resolve(links);
+          }, false);
+        });
+
+        document.body.appendChild($frame);
+        $frame.src = url; // Setting src starts loading
+
+        return promise;
+      }
+
+      function toNumber(d) {
+        return parseInt(d, 10);
+      }
+
+      function isUndefined(v) {
+        return typeof v === 'undefined';
+      }
+
+      global.folderApiRequest = folderApiRequest;
+    })(this);
+
+    (function appIIFE(global) {
+      'use strict';
+
+      const $body = $('body');
+      const $viewerContainer = $('.viewerContainer');
+      const $fileinfo = $('.fileinfo');
+      const $help = $('.help');
+
+      const opts = {
+        thumbnails: app.options.thumbnails,
+        supportedDocumentTypes: getSupportedTypes()
+      };
+      console.info(`Supported document mime-types: ${opts.supportedDocumentTypes.mime.join(', ')}`);
+
+      function getSupportedTypes() {
+        const supported = {
+          extensions: [],
+          mime: []
+        };
+
+        const types = [
+          { mime: 'text/plain', extensions: ['txt'] },
+          { mime: 'text/markdown', extensions: ['md'] },
+          { mime: 'text/html', extensions: ['html', 'htm'] },
+          { mime: 'text/css', extensions: ['css', 'scss', 'less'] },
+          { mime: 'application/json', extensions: ['json'] },
+          { mime: 'application/javascript', extensions: ['js'] },
+          { mime: 'application/sql', extensions: ['sql'] },
+          { mime: 'text/css', extensions: ['css', 'scss', 'less'] },
+          { mime: 'text/yaml', extensions: ['yaml'] },
+          { mime: 'text/x-yaml', extensions: ['yaml'] },
+          { mime: 'application/x-yaml', extensions: ['yaml'] }
+        ];
+
+        types.forEach(type => {
+          supported.extensions.push(...type.extensions);
+          supported.mime.push(type.mime);
+        });
+
+        return supported;
+      }
+
+      function isSupportedMimeType(mime) {
+        return opts.supportedDocumentTypes.mime.includes(mime);
+      }
+
+      const hashState = { location: '', document: '' };
+
+      function urlToFolder(url){
+        var pieces = url.split('/'); // Break the URL into pieces
+        pieces.pop(); // Remove the last piece (the filename)
+        return pieces.join('/') + '/'; // Put it back together with a trailing /
+      }
+
+      function urlToFilename(url) {
+        const re = /\/{1}([^\/]+\.[\w\d]{2,4})$/;
+        const parts = re.exec(url);
+        return (parts && parts.length > 1 ? parts[1] : url);
+      }
+
+      function urlToLabel(url) {
+        if (typeof url !== 'string') return;
+
+        const fragments = url.split('/');
+
+        const label = removeFileExtension(
+          decodeURIComponent(
+            fragments[fragments.length - 1]
+          )
+        );
+
+        const prefixRe = /^(the|a)(\s|%20)/i;
+        const hasPrefix = prefixRe.test(label);
+
+        if (hasPrefix) {
+          const prefix = prefixRe.exec(label);
+          const length = prefix[1].length + prefix[2].length;
+          return `${label.substring(length)}, ${prefix[1]}`;
+        } else {
+          return label;
+        }
+      }
+
+      function removeFileExtension(s) {
+        const re = new RegExp(`\\.+(${opts.supportedDocumentTypes.extensions.join('|')})+$`, 'i');
+        return s.replace(re, '');
+      }
+
+      function sortFiles(a, b) {
+        const labelA = urlToLabel(a);
+        const labelB = urlToLabel(b);
+
+        return labelA < labelB ? -1 : 1;
+      }
+
+      function urlType(url) {
+        if (isHiddenFileOrFolder(url)) {
+          return 'hidden';
+        } else if (url[url.length - 1] === '/') {
+          return 'folder';
+        } else if (isText(url)) {
+          return 'file';
+        } else {
+          return 'unknown';
+        }
+      }
+
+      function isText(haystack, fileExtensions) {
+        const re = new RegExp(`\.+(${ opts.supportedDocumentTypes.extensions.join('|')})+$`, 'i');
+        return re.test(haystack);
+      };
+
+      function isSubtitle(url) {
+        return url.toString().endsWith('.vtt') || url.toString().endsWith('.srt');
+      }
+
+      function isHiddenFileOrFolder(url) {
+        const reHidden = /\/\..+$/i;
+        return url.toString().match(reHidden);
+      }
+
+      async function createLinks(url) {
+        const links = await folderApiRequest(urlToFolder(url || window.location.href));
+        showLinks(links);
+      }
+
+      async function showLinks(links) {
+        var html = '';
+        const folders = links.folders;
+        const files = links.files;
+        const base = getBaseLocation(window.location);
+
+
+        folders.forEach((folder) => {
+          const rawUrl = folder.url;
+          const url = decodeURI(rawUrl).replace(base, '');
+          const label = url;
+
+          html += createFolderTemplate(rawUrl, label);
+        });
+
+        const documents = files.filter((file) => isText(file.url));
+
+        documents.sort(sortFiles);
+
+        documents.forEach((file) => {
+          const rawUrl = file.url;
+          const url = decodeURI(rawUrl).replace(base, '');
+          const label = urlToFilename(url); 
+          const cssClasses = (false ? 'current' : ''); // TODO: Conditional should check if this is the current document 
+
+          html += createFileTemplate(rawUrl, label, cssClasses);
+        });
+
+        $('.links').innerHTML = html;
+
+        const $links = [...document.querySelectorAll('.file, .folder')];
+        $links.forEach((link) => $(link).on('click', clickLink));
+      }
+
+      function createFileTemplate(url, label, optionalClasses = '') {
+        return `<a href='${url}' class='file-item file ${optionalClasses}' draggable='false'><div class='arrow' draggable='false'><svg class='' width="24" height="24"><use xlink:href='#svgDocument'></svg></div><div class='title' draggable='false'>${label}</div></a>`;
+      }
+
+      function createFolderTemplate(url, label, optionalClasses = '') {
+        return `<a href='${url}' class='file-item folder ${optionalClasses}' draggable='false'><div class='arrow' draggable='false'><svg class='open' width="24" height="24"><use xlink:href='#svgFolderOpen'></svg><svg class='closed' width="24" height="24"><use xlink:href='#svgFolderClosed'></svg></div><div class='title' draggable='false'><svg viewBox='0 0 24 24' width="24" height="24"><use xlink:href='#svgFolderArrow'></svg>${label}</div></div></a>`;
+      }
+
+      function clickLink(e) {
+        e.preventDefault();
+
+        // `this` always refers to the parent element. `e.target` can be children too instead.
+        const $el = $(this);
+
+        if ($el.hasClass('file')) actionOpen($el.href);
+
+        if ($el.hasClass('folder')) {
+          setLocation($el.href);
+          createLinks($el.href);
+        }
+
+        updateHash();
+      }
+
+      function hideElement(el) {
+        const s = el.style;
+        s.width = 0;
+        s.height = 0;
+        s.margin = 0;
+        s.padding = 0;
+        s.border = '0 none';
+      }
+
+      function getState() {
+        const location = hashState.location;
+        const document = hashState.document;
+        const state = { location, document }
+
+        return state;
+      }
+
+      function getBaseLocation(l) {
+        return l.protocol + '//' + l.host;
+      }
+
+      function getHash() {
+        const urlHash = window.location.hash.substr(1);
+
+        var hash = {};
+        try {
+          hash = decodeHash(urlHash);
+        } catch (e) { }
+
+        return hash;
+      }
+
+      async function updateHash() {
+        location.hash = encodeHash(getState());
+      }
+
+      async function setDocument(documentURL) {
+        hashState.document = documentURL;
+      }
+
+      async function setLocation(locationURL) {
+        hashState.location = locationURL;
+      }
+
+      function encodeHash(hash) {
+        return encodeURIComponent(btoa(JSON.stringify(hash)));
+      }
+
+      function decodeHash(hash) {
+        return JSON.parse(atob(decodeURIComponent(hash)));
+      }
+
+      function openFromCloud(cloud) {
+        return async function() {
+          var metadata;
+
+          switch (cloud) {
+            case 'onedrive':
+              metadata = await onedrive();
+              break;
+            case 'gdrive':
+              metadata = await gdrive();
+              break;
+          }
+
+          return actionOpen(metadata.url);
+        }
+      }
+
+      function actionPasteAndOpen(e) {
+        e.preventDefault();
+
+        const re = /^https?:\/\//i;
+        const clipboard = e.clipboardData.getData('text');
+
+        if (clipboard && re.test(clipboard)) {
+          const url = clipboard;
+          console.info(`Opening document from clipboard: ${clipboard}`);
+          actionOpen(url);
+        }
+      }
+
+      function actionOpen(url) {
+        resetFileinfo();
+
+        if (!!url) {
+          $body.dataset.loaded = true;
+
+          setDocument(url);
+          openDocument(url);
+          updateFileinfo(url);
+        } else {
+          setDocument(undefined);
+          delete $body.dataset.loaded;
+
+          closeDocument();
+        }
+
+        setCurrentDocumentTile(url);
+        // updateHash();
+      }
+
+      function closeDocument (){
+        $('.view').src = 'about:blank';
+        console.info(`File closed`);
+      }
+
+      async function openDocument(url) {
+        const f = await fetch(url);
+        const text = await f.text();
+        const mimeType = urlToMimetype(url);
+
+        const css = `<style>
+          * { font-family: Calibri, Arial, Helvetica, sans-serif; }
+          body { 
+            background-color: white;
+            margin-bottom: 2em;
+          }
+          img { max-width: 100%; }
+          code { font-family: Consolas, 'Courier New', monospace; }
+        </style>`;
+
+        var dataUri;
+        switch (mimeType) {
+          case 'text/css':
+            dataUri = textToDataUri(text, 'css');
+            break;
+          case 'text/markdown':
+          case 'text/plain':
+          case 'text/html':
+          default:
+            const html = css + markdownToHtml(text);
+            dataUri = textToDataUri(html, 'html');
+            break;
+          }
+              
+        const $iframe = $('.view');
+        $iframe.src = dataUri;
+        console.info(`Opened: ${url}`);
+      }
+
+      function urlToMimetype(url) {
+        const filename = urlToFilename(url);
+        const extensionRe = /\.([\w\d]{2,8})$/gi;
+        const results = extensionRe.exec(filename);
+        const extension = (results && results[1] ? results[1] : undefined);
+
+        switch (extension) {
+          case 'md':
+            return 'text/markdown'
+            break;
+          case 'html':
+          return 'text/html'
+            break;
+            case 'css':
+          return 'text/css'
+            break;
+          case 'json':
+            return 'application/json'
+            break;
+          case 'js':
+            return 'application/javascript'
+            break;
+          case 'yaml':
+            return 'text/yaml'
+            break;
+          case 'txt':
+          default:
+            return 'text/plain'
+            break;
+        }
+      }
+
+      function textToDataUri(body, type) {
+        switch (type) {
+          case 'html':
+            return `data:text/html;charset=UTF-8,${body}`;
+            break;
+          case 'text':
+            return `data:text/plain;charset=UTF-8,${body}`;
+            break;
+          case 'css':
+            return `data:text/css;charset=UTF-8,${body}`;
+            break;  
+        }
+      }
+
+      function markdownToHtml(md) {
+        const parserOpts = {
+          smart: true
+        };
+
+        const parser   = new commonmark.Parser(parserOpts);
+        const renderer = new commonmark.HtmlRenderer();
+        const parsed = parser.parse(md);
+        const html   = renderer.render(parsed);
+
+        const sanitized = HtmlSanitizer.SanitizeHtml(html);
+
+        return sanitized;
+      }
+
+      async function getHeaderData(url) {
+        const opts = {
+          method: 'GET',
+          mode: 'cors',
+        }
+
+        if (url.startsWith('blob')) opts.method = 'GET';
+
+        try {
+          const f = await fetch(url, opts);
+          const h = f.headers;
+
+          if (url.startsWith('http')) {
+            const size = undefined; //h.get('Content-Length');
+            const mimeType = h.get('Content-Type');
+            const date = h.get('Last-Modified');
+            return { size, mimeType, date };
+          } else if (url.startsWith('blob')) {
+            const size = h.get('Content-Length');
+            const mimeType = h.get('Content-Type');
+            return { size, mimeType };
+          }
+        } catch (e) {
+          console.warn(e);
+          return {};
+        }
+      }
+
+      async function updateFileinfo(url) {
+        const metadata = {
+          name: urlToFilename(url),
+          url: url
+        };
+
+        const headerData = await getHeaderData(url);
+        const headerKeys = Object.keys(headerData);
+        headerKeys.forEach((k) => metadata[k] = headerData[k]);
+
+        const mapping = {
+          name: { name: 'Filename', format: (v) => decodeURIComponent(v)},
+          url: 'URL',
+          size: {name: 'Size', format: (v) => `${limitPrecision(v, 1)} Bytes`},
+          mimeType: 'Type',
+          date: { name: 'Date', format: (d) => dateFormat(new Date(d))}
+        }
+        // Generate HTML for each fileinfo metadata item
+        var html = '';
+        const metadataKeys = Object.keys(metadata);
+
+        metadataKeys.forEach((key) => {
+          if (typeof metadata[key] !== 'undefined') {
+            const map = mapping[key];
+            const label = (typeof map === 'object' ? map.name : map);
+            const value = (
+              typeof map === 'object' && typeof map.format === 'function' ?
+              map.format(metadata[key]) :
+              metadata[key]
+            );
+            html += `<li class='fileinfo-item modal-item ${key}'><span class='key'>${label}</span><span class="value">${value}</span></li>`;
+          }
+        });
+
+        $fileinfo.html(html);
+      }
+
+      function dateFormat(d) {
+        const formattedDate = Intl.DateTimeFormat(undefined, {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric'
+        }).format(d);
+        return formattedDate;
+      }
+
+      function resetFileinfo() {
+        $fileinfo.html('<li class="fileinfo-item modal-item">Metadata not yet loaded</li>');
+      }
+
+      async function urlToObjectUrl(url, type) {
+        const f = await fetch(url);
+        const blob = await f.blob();
+
+        if (type) {
+          return URL.createObjectURL(blob.slice(0, blob.size, type));
+        } else {
+          return URL.createObjectURL(blob);
+        }
+      }
+
+      function setCurrentDocumentTile(url) {
+        const $former = $('.links .current')
+        if ($former && $former.classList) $former.classList.remove('current');
+
+        const $current = $(`.file[href='${url}']`);
+        if ($current && $current.classList) $current.classList.add('current');
+      }
+
+      function actionClose() {
+        
+      }
+
+      function actionFullscreenToggle() {
+        if (isFullscreen()) {
+          exitFullscreen();
+        } else {
+          requestFullscreen();
+        }
+      }
+
+      function updateFullscreenSupport() {
+        const $el = $viewerContainer;
+        if (
+          (document.fullscreenEnabled       && $el.requestFullscreen) ||
+          (document.webkitFullscreenEnabled && $el.webkitRequestFullscreen)
+        ) {
+          $('.btn-fullscreen').addClass('enabled');
+        }
+      }
+
+      function isFullscreen() {
+        return !!document.fullscreenElement || !!document.webkitFullscreenElement;
+      }
+
+      function requestFullscreen() {
+        const $el = $viewerContainer;
+        const requests = ['requestFullscreen', 'webkitRequestFullscreen', 'msRequestFullscreen'];
+        prefixRun($el, requests);
+      }
+
+      function exitFullscreen() {
+        const $el = document;
+        const exits = ['exitFullscreen', 'webkitExitFullScreen', 'msExitFullscreen', 'addEventListner'];
+        prefixRun($el, exits);
+      }
+
+      function prefixRun($el, methods) {
+        const supportedMethod = methods.find(method => $el[method]);
+        $el[supportedMethod]();
+      }
+
+      function setCSSVariable(k, v) {
+        if (typeof v === 'number' || v.endsWith('%')) {
+          return $body.style.setProperty(k, v);
+        } else {
+          return $body.style.setProperty(k, `'${v}'`);
+        }
+      }
+
+      function actionDropLocalFile(e) {
+        $viewerContainer.removeClass('drop');
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) openFile(files[0]);
+      }
+
+      function actionOpenLocalFile() {
+        const reader = new FileReader();
+        const $input = $(`<input type="file" accept="${opts.supportedDocumentTypes.mime.join(',')}"/>`);
+        $input.on('change', () => openFile($input.files[0]));
+        $input.click();
+      }
+
+      function openFile(file) {
+        if (file) return actionOpen(URL.createObjectURL(file));
+      }
+
+      function setupControls() {
+        $('.btn-fullscreen').on('click', actionFullscreenToggle);
+        updateFullscreenSupport();
+
+        $('.btn-fileinfo').on('click', () => toggleModal($fileinfo));
+        $fileinfo.on('click', (e) => {
+          // Only hide the fileinfo if the target element isn't `<span class="value"/>` so that you can copy value text
+          const isValue = $(e.target).hasClass('value');
+          if (!isValue) hideModals();
+        });
+        $help.on('click', () => hideModals);
+
+        $('.btn-close').on('click', () => actionOpen());
+
+        $('.btn-onedrive').on('click', openFromCloud('onedrive'));
+        $('.btn-gdrive').on('click', openFromCloud('gdrive'));
+        $('.btn-local-file').on('click', actionOpenLocalFile);
+
+        $viewerContainer.on('dragenter', () => $viewerContainer.addClass('drop'));
+        $viewerContainer.on('dragleave', (e) => {
+          // Only remove `drop` class if the target is .viewerContainer
+          if (e.target === $viewerContainer) $viewerContainer.removeClass('drop');
+        });
+        $viewerContainer.on('drop', actionDropLocalFile);
+        $viewerContainer.on('dragover', (e) => {
+          e.dataTransfer.dropEffect = 'link';
+          e.preventDefault();
+        });
+
+        $body.on('paste', actionPasteAndOpen);
+      }
+
+      $(document).on('keydown', keyboardBroker);
+      function keyboardBroker(e) {
+        switch (e.key) {
+          case '0':
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+          case '7':
+          case '8':
+          case '9':
+            e.preventDefault();
+            const position = e.key / 10;
+//            $player.currentTime = $player.duration * position;
+            break;
+          case 'Backspace':
+            e.preventDefault();
+            $('.links a').click();
+            break;
+          case 'ArrowLeft':
+            e.preventDefault();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            break;
+          case 'i':
+            toggleModal($fileinfo);
+            break;
+          case '?':
+          case 'F1':
+            e.preventDefault();
+            toggleModal($help);
+            break;
+          case 'Escape':
+            hideModals();
+            break;
+          case 'f':
+            actionFullscreenToggle();
+            break;
+        }
+      }
+
+      function toggleModal($el) {
+        if ($el.hasClass('show')) {
+          hideModals();
+        } else if ($('.modal.show')) {
+          hideModals();
+          showModal($el);
+        } else {
+          showModal($el);
+        }
+      }
+
+      function showModal($el) {
+        $el.addClass('show');
+        $el.once('click', hideModals)
+      }
+
+      function hideModals(e) {
+        if (e && $(e.target).hasClass('value')) {
+          return;
+        }
+
+        const modals = [...document.querySelectorAll('.modal.show')];
+        modals.forEach((el) => $(el).removeClass('show'));
+      }
+
+      function svgDataUri(svg) {
+        const base64 = btoa(svg);
+        return `data:image/svg+xml;base64,${base64}`;
+      }
+
+      function createColorDataURI(r, g, b, a) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+
+        const context = canvas.getContext('2d');
+        const imageData = context.getImageData(0, 0, 1, 1);
+        const subPixels = imageData.data;
+
+        subPixels[0] = r || 0; // r
+        subPixels[1] = g || 0; // g
+        subPixels[2] = b || 0; // b
+        subPixels[3] = a || 255;
+
+        context.putImageData(imageData, 0, 0);
+
+        return canvas.toDataURL('image/png');
+      }
+
+      // main()
+      async function main() {
+        setupControls();
+
+        const hash = getHash();
+
+        if (hash && hash.location && hash.location.length > 1) {
+          setLocation(hash.location);
+          createLinks(hash.location);
+        } else {
+          createLinks();
+        }
+
+        if (hash && hash.document && hash.document.length > 1) {
+          setDocument(hash.document);
+          actionOpen(hash.document);
+        }
+
+        $(window).on('popstate', (e) => {
+          const hash = getHash();
+          if (hash && hash.location && hash.location.length > 1) createLinks(hash.location)
+        });
+      }
+
+      main();
+    })(this);
+  </script>
+</body>
+
+</html>
