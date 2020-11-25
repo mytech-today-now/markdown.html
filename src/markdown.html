@@ -4,7 +4,7 @@
   <title>markdown.html</title>
   <meta charset='utf-8'>
   <meta name='description' content='Drop markdown.html in a folder of text files and view them nicely on the web' />
-  <meta name='version' content='1.0'>
+  <meta name='version' content='1.1'>
   <meta name='Copyright' content=' ©2020 Paul Ellis'>
   <meta name='license' content='https://opensource.org/licenses/MIT'>
   <meta name='apple-mobile-web-app-status-bar-style' content='black'>
@@ -30,18 +30,32 @@
       --tile-border-radius: 0.25rem;
       --inter-tile-margin: 0.5rem;
 
-      --theme-color: rgb(73, 155, 234);
+      --theme-color: rgb(65, 136, 204);
       --folder-color: rgb(3, 167, 221);
       --modal-background-color: rgba(32,32,32,0.5);
+      --base-background-color: #DDD;
+      --base-text-color: #111;
+      --viewer-background-color: #FFF;
+      --viewer-text-color: #333;
 
       --transition-base: 300ms;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      * {
+        --theme-color: rgb(73, 155, 234);
+        --base-background-color: #111;
+        --base-text-color: #EEE;
+        --viewer-background-color: #333;
+        --viewer-text-color: #DDD;
+      }
     }
 
     html {
       font-family: 'Segoe UI', Calibri, Arial, Helvetica, sans-serif;
       font-size: 12px;
-      background-color: #111;
-      color: #FFF;
+      background-color: var(--base-background-color);
+      color: var(--base-text-color);
     }
 
     body {
@@ -61,6 +75,9 @@
       overflow: hidden;
       height: 100vh;
       width: calc(100vw - var(--tile-width));
+      background-color: var(--viewer-background-color);
+      color: var(--viewer-text-color);
+      padding: 0;
     }
 
     .viewerContainer:-webkit-full-screen,
@@ -126,17 +143,17 @@
     }
 
     .view {
-      position: absolute;
-      top: 0;
-      left: 0;
       border: 0 none;
+      margin: 0;
       width: 100%;
-      height: 100%;
-
-      background-color: white;
-      color: black;
-
+      height: calc(100% - 6em);
+    }
+    pre.view {
+      overflow: auto;
       padding: 1em;
+    }
+    iframe.view {
+      overflow: hidden;
     }
 
     .modal {
@@ -163,6 +180,7 @@
       list-style: none;
 
       background-color: var(--modal-background-color);
+      color: var(--base-background-color);
     }
 
     .show {
@@ -187,8 +205,8 @@
       width: 100%;
       position: relative;
       margin: 0;
-      background-color: rgba(0,0,0,0.25);
-
+      background-color: var(--viewer-background-color);
+      color: var(--viewer-text-color);
     }
     .help-item {
       max-width: 320px;
@@ -211,7 +229,8 @@
       width: 15ch;
       padding: 0.75em;
       border-radius: var(--tile-border-radius);
-      background-color: #333;
+      background-color: rgba(128,128,128,0.5);
+      color: var(--viewer-text-color);
       text-align: center;
       gap: 1rem;
       font-weight: normal;
@@ -225,12 +244,13 @@
       display: none;
       position: absolute;
       bottom: 0;
-      background: rgba(128,128,128,0.25);
+      right: 0;
+      background: rgba(128,128,128,0.2);
       padding: 1rem;
       width: 100%;
       text-align: center;
-      margin-top: 1rem;
       overflow: hidden;
+      height: 6em;
     }
 
     body[data-loaded="true"] .controls {
@@ -255,7 +275,7 @@
       fill: var(--theme-color);
       width: 24px;
       height: 24px;
-      filter: drop-shadow(0px 0px 4px #FFF);
+      filter: drop-shadow(0px 0px 4px var(--viewer-background-color));
     }
 
     .controls button:hover, .hasSubtitles .controls .btn-subtitles:hover {
@@ -336,7 +356,6 @@
     }
 
     .links a {
-      /* background */
       position: relative;
       display: flex;
       align-items: center;
@@ -347,10 +366,10 @@
 
       padding: 0;
 
-      background-color: #666;
-      color: #DDD;
+      background-color: rgba(128,128,128,0.2);
+      color: var(--base-text-color);
       text-decoration: none;
-      border-top: 1px solid #000;
+      border-top: 1px solid rgba(128,128,128,0.5);
     }
 
     .links a:last-of-type {
@@ -404,7 +423,7 @@
     }
 
     .links a.folder {
-      background-color: #333;
+      background-color: rgba(128,128,128,0.5);
     }
 
     /* SVG Icons */
@@ -413,11 +432,11 @@
     }
 
     .links a.folder:hover {
-      background-color: #444;
+      background-color: rgba(128,128,128,0.6)
     }
 
     .links a.file:hover {
-      background-color: #777;
+      background-color: rgba(128,128,128,0.5)
     }
 
     .file-item:hover .arrow svg,
@@ -460,12 +479,12 @@
     .no-transitions * {
       transition: none !important;
     }
+    
   </style>
 </head>
 <body>
   <section class='links'></section>
   <div class='viewerContainer'>
-    <iframe class='view' sandbox='allow-same-origin'></iframe>
     <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
     <ul class='help modal'>
       <li class='help-item modal-item'><span class='key'>0-9</span><span class='desc'>Jump to 0%-90% of text file</span></li>
@@ -531,8 +550,65 @@
   </section>
   <script type='text/javascript' src='https://apis.google.com/js/api.js' defer></script>
   <script type='text/javascript' src='https://js.live.net/v7.2/OneDrive.js' defer></script>
+  
   <script src="https://cdn.jsdelivr.net/gh/jitbit/HtmlSanitizer@master/HtmlSanitizer.js"></script>
+  
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.0/build/highlight.min.js"></script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@10.4.0/build/styles/default.min.css">
+  <style>
+    .hljs,
+    .hljs-subst {
+      color: #333;
+      background-color: transparent;
+    }
+
+    .hljs-comment{
+      color:rgb(128,128,128);
+    }
+    .hljs-attribute,.hljs-doctag,.hljs-keyword,.hljs-meta-keyword,.hljs-name,.hljs-selector-tag{}
+    .hljs-deletion,.hljs-number,.hljs-quote,.hljs-selector-class,.hljs-selector-id,.hljs-string,.hljs-template-tag,.hljs-type{
+      color: var(--theme-color);
+      filter: brightness(1.2);
+    }
+    .hljs-section,.hljs-title,.hljs-name{
+      color: var(--theme-color);
+    }
+    .hljs-link,.hljs-regexp,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-symbol,.hljs-template-variable,.hljs-variable{
+      color: var(--theme-color);
+      filter: hue-rotate(270deg);
+    }
+    .hljs-literal{
+      color: var(--theme-color);
+      filter: hue-rotate(-45deg);
+    }
+    .hljs-addition,.hljs-built_in,.hljs-bullet,.hljs-code{
+      color: var(--theme-color);
+      filter: hue-rotate(90deg);
+    }
+    .hljs-meta{
+      color: var(--theme-color);
+      filter: hue-rotate(45deg);
+    }
+    .hljs-meta-string {
+      color: var(--theme-color);
+      filter: hue-rotate(135deg);
+    }
+    .hljs-attr, .hljs-attribute, .hljs-keyword {
+      color: var(--theme-color);
+      filter: hue-rotate(200deg);
+    }
+    .hljs-emphasis{}
+    .hljs-strong{}
+
+    @media (prefers-color-scheme: dark) {
+      .hljs,
+      .hljs-subst {
+        color: #CCC;
+      }
+    }
+  </style>  
   <script type='text/javascript' src='https://cdn.statically.io/gh/commonmark/commonmark.js/master/dist/commonmark.min.js'></script>
+  
   <script defer>
     /* IMPORTANT!!!
 
@@ -1136,6 +1212,7 @@
           const h = res.headers;
           return h;
         } catch (e) {
+          console.warn(`Unable to retrieve header data for ${url}`);
           console.warn(e);
           return {};
         }
@@ -1390,17 +1467,27 @@
         };
 
         const types = [
-          { mime: 'text/plain', extensions: ['txt'] },
+          { mime: 'text/plain', extensions: ['txt', 'c', 'cs', 'h', 'cpp', 'log'] },
           { mime: 'text/markdown', extensions: ['md'] },
           { mime: 'text/html', extensions: ['html', 'htm'] },
           { mime: 'text/css', extensions: ['css', 'scss', 'less'] },
           { mime: 'application/json', extensions: ['json'] },
-          { mime: 'application/javascript', extensions: ['js'] },
+          { mime: 'application/javascript', extensions: ['js', 'mjs'] },
+          { mime: 'text/javascript', extensions: ['js', 'mjs'] },
           { mime: 'application/sql', extensions: ['sql'] },
           { mime: 'text/css', extensions: ['css', 'scss', 'less'] },
           { mime: 'text/yaml', extensions: ['yaml'] },
           { mime: 'text/x-yaml', extensions: ['yaml'] },
-          { mime: 'application/x-yaml', extensions: ['yaml'] }
+          { mime: 'application/x-yaml', extensions: ['yaml'] },
+          { mime: 'application/xml', extensions: ['xml'] },
+          { mime: 'text/xml', extensions: ['xml'] },
+          { mime: 'text/xml', extensions: ['xml'] },
+          { mime: 'text/csv', extensions: ['csv'] },
+          { mime: 'application/x-sh', extensions: ['sh'] },
+          { mime: 'text/x-script.sh', extensions: ['sh'] },
+          { mime: 'text/x-csharp', extensions: ['cs'] },
+          { mime: 'text/x-script.phyton', extensions: ['py'] },
+          { mime: 'text/sgml', extensions: ['sgml'] }
         ];
 
         types.forEach(type => {
@@ -1652,7 +1739,7 @@
         }
 
         setCurrentDocumentTile(url);
-        // updateHash();
+        updateHash();
       }
 
       function closeDocument (){
@@ -1665,33 +1752,74 @@
         const text = await f.text();
         const mimeType = urlToMimetype(url);
 
+        const color = getCSSVariable('--viewer-text-color');
+        const backgroundColor = getCSSVariable('--viewer-background-color');
+        const themeColor = getCSSVariable('--theme-color');
+
         const css = `<style>
           * { font-family: Calibri, Arial, Helvetica, sans-serif; }
-          body { 
-            background-color: white;
-            margin-bottom: 2em;
+          body {
+            background: ${backgroundColor};
+            color: ${color};
+            margin-bottom: 5em;
+            font-size: 12px;
+          }
+          a {
+            color: ${themeColor};
           }
           img { max-width: 100%; }
-          code { font-family: Consolas, 'Courier New', monospace; }
+          pre, code { font-family: Consolas, 'Courier New', monospace; }
+          pre {
+            background-color: rgba(128,128,128,0.25);
+            display: block;
+            padding: 0.5rem;
+            border-radius: 0.2rem;
+            margin: 0.5rem 0;
+          }
         </style>`;
+
+        var output = {
+          text: '',
+          type: ''
+        };
 
         var dataUri;
         switch (mimeType) {
-          case 'text/css':
-            dataUri = textToDataUri(text, 'css');
-            break;
           case 'text/markdown':
-          case 'text/plain':
-          case 'text/html':
-          default:
-            const html = css + markdownToHtml(text);
-            dataUri = textToDataUri(html, 'html');
+            output.text = `<html><head>${css}</head><body>${markdownToHtml(text)}</body></html>`;
+            output.type = 'html';
             break;
-          }
-              
-        const $iframe = $('.view');
-        $iframe.src = dataUri;
+          case 'application/json':
+            output.text = prettyPrintJSON(text);
+            output.type = 'plain';
+            break;
+          default:
+            output.text = text;
+            output.type = 'plain';
+            break;
+        }
+
+        if ($('.view')) $('.view').remove();
+
+        if (output.type === 'plain') {
+          const $pre = $(`<pre class='view'><code></code></pre>`);
+          const $code = ('code', $pre);
+          $code.innerText = output.text;
+          $code.addClass(mimeTypeToLanguage(mimeType));
+          $('.viewerContainer').append($pre);
+
+          if (hljs) hljs.highlightBlock($pre);
+        } else {
+          const $iframe = $(`<iframe class='view' sandbox='allow-same-origin'></iframe>`);
+          $iframe.src = textToObjectURL(output.text, 'text/html');
+          $('.viewerContainer').append($iframe);
+        }
         console.info(`Opened: ${url}`);
+      }
+
+      function prettyPrintJSON(strOrObj) {
+        const o = (typeof strOrObj === 'string' ? JSON.parse(strOrObj) : strOrObj)
+        return JSON.stringify(o, null, 2);
       }
 
       function urlToMimetype(url) {
@@ -1700,44 +1828,59 @@
         const results = extensionRe.exec(filename);
         const extension = (results && results[1] ? results[1] : undefined);
 
-        switch (extension) {
-          case 'md':
-            return 'text/markdown'
-            break;
-          case 'html':
-          return 'text/html'
-            break;
-            case 'css':
-          return 'text/css'
-            break;
-          case 'json':
-            return 'application/json'
-            break;
-          case 'js':
-            return 'application/javascript'
-            break;
-          case 'yaml':
-            return 'text/yaml'
-            break;
-          case 'txt':
-          default:
-            return 'text/plain'
-            break;
-        }
+        const types = {
+          md: 'text/markdown',
+          html: 'text/html',
+          css: 'text/css',
+          less: 'text/css',
+          scss: 'text/css',
+          json: 'application/json',
+          js: 'application/javascript',
+          yaml: 'text/yaml',
+          txt: 'text/plain',
+          c: 'text/plain',
+          h: 'text/plain',
+          cs: 'text/plain',
+          cpp: 'text/plain',
+          log: 'text/plain',
+          sql: 'application/sql',
+          xml: 'application/xml',
+          csv: 'text/plain',
+          sh: 'application/x-sh',
+          py: 'text/x-script.python',
+          sgml: 'text/sgml'
+        };
+
+        return types[extension] || 'text/plain';
       }
 
-      function textToDataUri(body, type) {
-        switch (type) {
-          case 'html':
-            return `data:text/html;charset=UTF-8,${body}`;
-            break;
-          case 'text':
-            return `data:text/plain;charset=UTF-8,${body}`;
-            break;
-          case 'css':
-            return `data:text/css;charset=UTF-8,${body}`;
-            break;  
-        }
+      function mimeTypeToLanguage(type) {
+        return type.split('/')[1];
+      }
+
+      function getLanguageFromURL(url) {
+        const filename = urlToFilename(url);
+        const extensionRe = /\.([\w\d]{2,8})$/gi;
+        const results = extensionRe.exec(filename);
+        const extension = (results && results[1] ? results[1] : undefined);
+
+        const extensions = {
+          md: 'markdown',
+          html: 'html',
+          css: 'css',
+          json: 'json',
+          js: 'javascript',
+          yaml: 'yaml'
+        };
+
+        return extensions[extension];
+      }
+
+      function textToObjectURL(body, type) {
+        const blob = new Blob([body], {type});
+        const url = URL.createObjectURL(blob);
+
+        return url;
       }
 
       function markdownToHtml(md) {
