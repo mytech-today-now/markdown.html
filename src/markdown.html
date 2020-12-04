@@ -597,8 +597,6 @@
       color: var(--theme-color);
       filter: hue-rotate(200deg);
     }
-    .hljs-emphasis{}
-    .hljs-strong{}
 
     @media (prefers-color-scheme: dark) {
       .hljs,
@@ -1391,6 +1389,9 @@
               res.name = urlToFilename(url);
               target = files;
               break;
+            default:
+              target = [];
+              break;
           }
 
           if (metadata.size) res.size = metadata.size;
@@ -1549,18 +1550,6 @@
         const labelB = urlToLabel(b);
 
         return labelA < labelB ? -1 : 1;
-      }
-
-      function urlType(url) {
-        if (isHiddenFileOrFolder(url)) {
-          return 'hidden';
-        } else if (url[url.length - 1] === '/') {
-          return 'folder';
-        } else if (isText(url)) {
-          return 'file';
-        } else {
-          return 'unknown';
-        }
       }
 
       function isText(haystack, fileExtensions) {
