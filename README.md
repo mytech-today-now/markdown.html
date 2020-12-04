@@ -12,13 +12,13 @@ To use it, copy the [`./src/markdown.html`](src/markdown.html) file into a folde
 ### Supported features
 
 * Only 1 file with zero external dependencies
-* [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined
-* May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
-* Viewer for `txt` and `md` text files using the browser video engine
-* Sharable URL that will load `markdown.html` in the same folder location, and video position
-* Social media metadata (`og:\*`, `twitter:\*`)
-* Text file metadata (bitrate, resolution, etc)
+* Viewer for text files with syntax highlighting and markdown rendering
+* Sharable URL that will load `markdown.html` with the same document and folder location
+* Text file metadata (file size, mime-type, etc)
 * Keyboard shortcuts (press `?` to see the list)
+* May be installed as a PWA (Progressive Web App) app. Dynamically generated inline data URI manifest file.
+* [`SVG images`](https://github.com/microsoft/fluentui-system-icons/) are inlined
+* Social media metadata (`og:\*`, `twitter:\*`)
 * Support for viewing text files directly from **OneDrive** and **Google Drive**. You **must supply the appropriate keys** in the `app.options.cloud` AND register your app with Microsoft and/or Google. Instructions are in the code. `markdown.html` also **must be served over HTTPS** for the Microsoft and Google auth flows to work. [Remix this Glitch](https://markdown-html-remix.glitch.me/src/markdown.html#eyJsb2NhdGlvbiI6Imh0dHBzOi8vbWFya2Rvd24taHRtbC1yZW1peC5nbGl0Y2gubWUvIiwiZG9jdW1lbnQiOiIifQ%3D%3D) to easily check it out over HTTPS with your own API keys.
 
 ## Supported Browsers
