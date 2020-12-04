@@ -31,8 +31,10 @@
       --inter-tile-margin: 0.5rem;
 
       --theme-color: rgb(65, 136, 204);
-      --folder-color: rgb(3, 167, 221);
-      --modal-background-color: rgba(32,32,32,0.5);
+      --folder-color: var(--theme-color);
+      --current-doc-color: var(--theme-color);
+      --modal-background-color: rgba(32,32,32,0.3);
+      --modal-foreground-color: #FFF;
       --base-background-color: #DDD;
       --base-text-color: #111;
       --viewer-background-color: #FFF;
@@ -44,6 +46,8 @@
     @media (prefers-color-scheme: dark) {
       * {
         --theme-color: rgb(73, 155, 234);
+        --modal-background-color: rgba(0,0,0,0.3);
+        --modal-foreground-color: #FFF;
         --base-background-color: #111;
         --base-text-color: #EEE;
         --viewer-background-color: #333;
@@ -108,7 +112,7 @@
       font-size: 5rem;
       text-shadow: 0px 0px 1.5rem #000;
       background-color: rgba(64,64,64,0.5);
-      background-image: url('data:image/svg+xml;utf8,<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path fill="hsl(323, 100%, 50%)" d="M12,2 C17.5228,2 22,6.47715 22,12 C22,17.5228 17.5228,22 12,22 C6.47715,22 2,17.5228 2,12 C2,6.47715 6.47715,2 12,2 Z M12,4 C7.58172,4 4,7.58172 4,12 C4,16.4183 7.58172,20 12,20 C16.4183,20 20,16.4183 20,12 C20,7.58172 16.4183,4 12,4 Z M12,6 C15.3137,6 18,8.68629 18,12 C18,15.3137 15.3137,18 12,18 C8.68629,18 6,15.3137 6,12 C6,8.68629 8.68629,6 12,6 Z M12,8 C9.79086,8 8,9.79086 8,12 C8,14.2091 9.79086,16 12,16 C14.2091,16 16,14.2091 16,12 C16,9.79086 14.2091,8 12,8 Z M12,10 C13.1046,10 14,10.8954 14,12 C14,13.1046 13.1046,14 12,14 C10.8954,14 10,13.1046 10,12 C10,10.8954 10.8954,10 12,10 Z"></path></svg>');
+      background-image: url('data:image/svg+xml;utf8,<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path fill="rgb(65, 136, 204)" d="M12,2 C17.5228,2 22,6.47715 22,12 C22,17.5228 17.5228,22 12,22 C6.47715,22 2,17.5228 2,12 C2,6.47715 6.47715,2 12,2 Z M12,4 C7.58172,4 4,7.58172 4,12 C4,16.4183 7.58172,20 12,20 C16.4183,20 20,16.4183 20,12 C20,7.58172 16.4183,4 12,4 Z M12,6 C15.3137,6 18,8.68629 18,12 C18,15.3137 15.3137,18 12,18 C8.68629,18 6,15.3137 6,12 C6,8.68629 8.68629,6 12,6 Z M12,8 C9.79086,8 8,9.79086 8,12 C8,14.2091 9.79086,16 12,16 C14.2091,16 16,14.2091 16,12 C16,9.79086 14.2091,8 12,8 Z M12,10 C13.1046,10 14,10.8954 14,12 C14,13.1046 13.1046,14 12,14 C10.8954,14 10,13.1046 10,12 C10,10.8954 10.8954,10 12,10 Z"></path></svg>');
       background-size: 25%;
       background-position: center;
       background-repeat: no-repeat;
@@ -146,7 +150,7 @@
       border: 0 none;
       margin: 0;
       width: 100%;
-      height: calc(100% - 6em);
+      height: calc(100% - 5em);
     }
     pre.view {
       overflow: auto;
@@ -154,6 +158,9 @@
     }
     iframe.view {
       overflow: hidden;
+    }
+    .view, .view * {
+      user-select: text;
     }
 
     .modal {
@@ -180,7 +187,10 @@
       list-style: none;
 
       background-color: var(--modal-background-color);
-      color: var(--base-background-color);
+      color: var(--modal-foreground-color);
+
+      backdrop-filter: blur(3px);
+      background-image: linear-gradient(to right, var(--modal-background-color), transparent 5px, transparent);
     }
 
     .show {
@@ -190,7 +200,8 @@
     .modal::before {
       display: block;
       font-size: 1.1em;
-      margin: 0.5rem;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
     }
     .fileinfo::before {
       content: "File metadata";
@@ -208,6 +219,14 @@
       background-color: var(--viewer-background-color);
       color: var(--viewer-text-color);
     }
+
+    .modal-item:first-of-type {
+      border-radius: var(--tile-border-radius) var(--tile-border-radius) 0 0;
+    }
+    .modal-item:last-of-type {
+      border-radius: 0 0 var(--tile-border-radius) var(--tile-border-radius);
+    }
+
     .help-item {
       max-width: 320px;
     }
@@ -250,39 +269,65 @@
       width: 100%;
       text-align: center;
       overflow: hidden;
-      height: 6em;
+      height: 5em;
+      align-items: center;
+      justify-content: center;
     }
 
     body[data-loaded="true"] .controls {
-      display: block;
+      display: flex;
     }
 
-    .controls button {
+    .sources {
+      padding: 1rem;
+      height: 4rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .sources button, .controls button {
+      position: relative;
       display: inline-block;
       border: 0 none;
       outline: none;
 
       width: 2.5rem;
 
-      margin: 1rem 0;
-
       background: none;
       cursor: pointer;
       transition: filter calc(var(--transition-base) / 2);
     }
 
-    .controls svg {
+    .sources button:hover {
+      filter: none !important;
+    }
+
+    .sources button:hover::after {
+      display: block;
+      position: absolute;
+      white-space: nowrap;
+      padding: 1rem;
+      top: 2.5rem;
+      left: calc(-0.3 * var(--tile-width) + 1.5rem);
+      border-radius: 5px;
+      filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.5));
+      content: attr(title);
+      background-color: rgba(255,255,255,0.9);
+      z-index: 10;
+    }
+
+    .sources svg, .controls svg {
       fill: var(--theme-color);
       width: 24px;
       height: 24px;
       filter: drop-shadow(0px 0px 4px var(--viewer-background-color));
     }
 
-    .controls button:hover, .hasSubtitles .controls .btn-subtitles:hover {
+    .sources button:hover, .controls button:hover, .hasSubtitles .controls .btn-subtitles:hover {
       filter: saturate(0.1) brightness(4);
     }
 
-    .controls button:active {
+    .sources button:active, .controls button:active {
       filter: brightness(0.5);
     }
 
@@ -327,26 +372,22 @@
       position: relative;
     }
 
-    .sources {
-      position: absolute;
-      right: 0;
-      top: 0;
-    }
-
     /* Make the `.sources` group together into it's own line if it gets too skinny */
     @media screen and (max-width: 500px) {
-      .sources {
-        position: relative;
-      }
-
       .sources button {
         margin: 0;
       }
     }
 
-    .links {
+    .sidebar {
+      position: relative;
+      width: var(--tile-width);
       height: 100vh;
-      min-width: var(--tile-width);
+    }
+
+    .links {
+      width: 100%;
+      height: calc(100% - 4rem);
       overflow: auto;
       margin-top: 0;
       display: flex;
@@ -358,18 +399,21 @@
     .links a {
       position: relative;
       display: flex;
+      flex-shrink: 0;
+      flex-grow: 0;
       align-items: center;
       overflow: hidden;
 
-      width: var(--tile-width);
+      width: 100%;
       height: var(--tile-height);
 
       padding: 0;
 
       background-color: rgba(128,128,128,0.2);
+      border-top: 1px solid rgba(128,128,128,0.5);
       color: var(--base-text-color);
       text-decoration: none;
-      border-top: 1px solid rgba(128,128,128,0.5);
+      word-break: break-all;
     }
 
     .links a:last-of-type {
@@ -414,14 +458,6 @@
       background-image: var(--image-url);
     }
 
-    .links a.file:hover:not(.current) {
-      background-blend-mode: luminosity;
-    }
-
-    .current {
-      background-blend-mode: soft-light;
-    }
-
     .links a.folder {
       background-color: rgba(128,128,128,0.5);
     }
@@ -432,11 +468,18 @@
     }
 
     .links a.folder:hover {
-      background-color: rgba(128,128,128,0.6)
+      background-color: rgba(128,128,128,0.8)
     }
 
     .links a.file:hover {
-      background-color: rgba(128,128,128,0.5)
+      background-color: rgba(255,255,255,0.8);
+      background-image: linear-gradient(45deg, rgba(255,255,255,1), rgba(255,255,255,1)), linear-gradient(45deg, var(--theme-color), var(--theme-color));
+      background-blend-mode: color-burn;
+    }
+    @media (prefers-color-scheme: dark) {
+      .links a.file:hover {
+        background-color: rgba(0,0,0,0.8);
+      }
     }
 
     .file-item:hover .arrow svg,
@@ -457,16 +500,12 @@
     }
 
     .current .arrow svg {
-      fill: var(--playing-color);
+      fill: var(--current-doc-color);
     }
 
     .folder svg {
       fill: var(--folder-color);
       transition: all var(--transition-base);
-    }
-
-    .folder:hover svg {
-      filter: brightness(2);
     }
 
     .folder .arrow .closed, .folder:first-of-type .arrow .open {
@@ -483,7 +522,14 @@
   </style>
 </head>
 <body>
-  <section class='links'></section>
+  <section class='sidebar'>
+    <section class='sources'>
+      <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svgOneDrive'></svg></button>
+      <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width='18' height='24'><use xlink:href='#svgGoogleDrive'></svg></button>
+      <button class='btn-local-file' type='button' title='Open local file'><svg><use xlink:href='#svgFolderOpenVertical'></svg></button>
+    </section>
+    <section class='links'></section>
+  </section>
   <div class='viewerContainer'>
     <ul class='fileinfo modal'><li class='fileinfo-item modal-item'>Metadata not yet loaded</li></ul>
     <ul class='help modal'>
@@ -499,11 +545,6 @@
         <button class='btn-fullscreen' type='button' title='Fullscreen'><svg class='collapse'><use xlink:href='#svgCollapse'></svg><svg class='expand'><use xlink:href='#svgExpand'></svg></button>
         <button class='btn-fileinfo' type='button' title='File information'><svg><use xlink:href='#svgInfo'></svg></button>
         <button class='btn-close' type='button' title='Close file'><svg><use xlink:href='#svgCloseDocument'></svg></button>
-          <section class='sources'>
-          <button class='btn-cloud btn-onedrive' type='button' title='Open from OneDrive'><svg width='30' height='24'><use xlink:href='#svgOneDrive'></svg></button>
-          <button class='btn-cloud btn-gdrive' type='button' title='Open from Google Drive'><svg width='18' height='24'><use xlink:href='#svgGoogleDrive'></svg></button>
-          <button class='btn-local-file' type='button' title='Open local file'><svg><use xlink:href='#svgFolderOpenVertical'></svg></button>
-        </section>
       </section>
     </section>
   </div>
@@ -1593,8 +1634,8 @@
         documents.forEach((file) => {
           const rawUrl = file.url;
           const url = decodeURI(rawUrl).replace(base, '');
-          const label = urlToFilename(url); 
-          const cssClasses = (false ? 'current' : ''); // TODO: Conditional should check if this is the current document 
+          const label = urlToFilename(url);
+          const cssClasses = (rawUrl === hashState.document ? 'current' : '');
 
           html += createFileTemplate(rawUrl, label, cssClasses);
         });
@@ -1732,7 +1773,7 @@
       }
 
       function closeDocument (){
-        $('.view').src = 'about:blank';
+        $('.view').remove();
         console.info(`File closed`);
       }
 
@@ -1900,7 +1941,7 @@
           const h = f.headers;
 
           if (url.startsWith('http')) {
-            const size = undefined; //h.get('Content-Length');
+            const size = h.get('Content-Length') || undefined;
             const mimeType = h.get('Content-Type');
             const date = h.get('Last-Modified');
             return { size, mimeType, date };
@@ -2074,7 +2115,10 @@
         $('.btn-gdrive').on('click', openFromCloud('gdrive'));
         $('.btn-local-file').on('click', actionOpenLocalFile);
 
-        $viewerContainer.on('dragenter', () => $viewerContainer.addClass('drop'));
+        $viewerContainer.on('dragenter', (e) => {
+          const isFile = e.dataTransfer.items && e.dataTransfer.items[0] && e.dataTransfer.items[0].kind === 'file';
+          if (isFile) $viewerContainer.addClass('drop');
+        });
         $viewerContainer.on('dragleave', (e) => {
           // Only remove `drop` class if the target is .viewerContainer
           if (e.target === $viewerContainer) $viewerContainer.removeClass('drop');
@@ -2103,17 +2147,18 @@
           case '9':
             e.preventDefault();
             const position = e.key / 10;
-//            $player.currentTime = $player.duration * position;
+            const $view = $('.view');
+
+            if ($view.tagName === 'PRE') {
+              const docHeight = $view.scrollHeight;
+              const viewHeight = $view.clientHeight;
+              const scrollTo = (docHeight - viewHeight) * position;
+              $view.scrollTo(0, scrollTo);
+            }
             break;
           case 'Backspace':
             e.preventDefault();
             $('.links a').click();
-            break;
-          case 'ArrowLeft':
-            e.preventDefault();
-            break;
-          case 'ArrowRight':
-            e.preventDefault();
             break;
           case 'i':
             toggleModal($fileinfo);
@@ -2194,7 +2239,7 @@
           createLinks();
         }
 
-        if (hash && hash.document && hash.document.length > 1) {
+        if (hash && hash.document && hash.document.length > 1 && !hash.document.startsWith('blob')) {
           setDocument(hash.document);
           actionOpen(hash.document);
         }
